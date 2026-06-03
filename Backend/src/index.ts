@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { swaggerSpec } from './config/swagger';
 import { errorHandler } from './presentation/middleware/error-handler';
+import { sanitizeInput } from './presentation/middleware/sanitize.middleware';
 import routes from './presentation/routes';
 import { initSocketServer } from './infrastructure/websocket/socket';
 import { logger } from './utils/logger';
@@ -36,12 +37,14 @@ const httpServer = createServer(app);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(sanitizeInput);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use('/api/v1', routes);
+
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
