@@ -1,0 +1,33 @@
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: iot-dynamodb-local
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal"
+    volumes:
+      - dynamodb-data:/home/dynamodblocal
+    working_dir: /home/dynamodblocal
+    restart: always
+    networks:
+      - iot-network
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: iot-dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://dynamodb-local:8000
+    depends_on:
+      - dynamodb-local
+    restart: always
+    networks:
+      - iot-network
+
+volumes:
+  dynamodb-data:
+
+networks:
+  iot-network:
+    driver: bridge
