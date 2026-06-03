@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid';
+import { ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { ReadingRepository } from '../../domain/repositories/reading.repository';
 import { DeviceRepository } from '../../domain/repositories/device.repository';
 import { AlertRepository } from '../../domain/repositories/alert.repository';
@@ -6,6 +7,8 @@ import { Reading } from '../../domain/entities/reading.entity';
 import { Alert } from '../../domain/entities/alert.entity';
 import { ReadingQuality, AlertSeverity, AlertType } from '../../domain/enums';
 import { emitDeviceReading, emitAlertNew } from '../../infrastructure/websocket/socket';
+import { docClient } from '../../infrastructure/database/dynamodb';
+import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
 
 interface IncomingReading {
@@ -25,6 +28,40 @@ export class ReadingService {
 
   async findByDeviceId(deviceId: string, limit?: number, cursor?: string) {
     return this.readingRepo.findByDeviceId(deviceId, limit, cursor);
+  }
+
+  async analytics(timeRangeHours = 1) {
+    const since = new Date(Date.now() - timeRangeHours * 60 * 60 * 1000).toISOString();
+
+    const result = await docClient.send(new ScanCommand({
+      TableName: env.dynamodbTableName,
+      FilterExpression: 'begins_with(SK, :prefix) AND SK >= :since',
+      ExpressionAttributeValues: {
+        ':prefix': 'READING#',
+        ':since': `READING#${since}`,
+      },
+      Limit: 1000,
+    }));
+
+    const readings = (result.Items || []) as Reading[];
+    const byUnit: Record<string, { values: number[]; count: number }> = {};
+
+    for (const r of readings) {
+      if (!byUnit[r.unit]) byUnit[r.unit] = { values: [], count: 0 };
+      byUnit[r.unit].values.push(r.value);
+      byUnit[r.unit].count++;
+    }
+
+    return Object.entries(byUnit).map(([unit, data]) => {
+      const sorted = [...data.values].sort((a, b) => a - b);
+      return {
+        unit,
+        count: data.count,
+        avg: Math.round((data.values.reduce((s, v) => s + v, 0) / data.values.length) * 100) / 100,
+        min: sorted[0],
+        max: sorted[sorted.length - 1],
+      };
+    });
   }
 
   async createBatch(readings: IncomingReading[]) {

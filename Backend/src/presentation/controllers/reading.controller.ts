@@ -29,4 +29,14 @@ export class ReadingController {
       next(err);
     }
   };
+
+  analytics = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hours = Number(req.query.hours) || 1;
+      const data = await this.readingService.analytics(hours);
+      res.json(data);
+    } catch (err) {
+      next(err);
+    }
+  };
 }
