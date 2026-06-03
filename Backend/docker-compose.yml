@@ -25,6 +25,46 @@ services:
     networks:
       - iot-network
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iot-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - JWT_SECRET=supersecretjwtkey_change_me_in_production
+      - JWT_REFRESH_SECRET=supersecretjwtrefreshkey_change_me_in_production
+    depends_on:
+      - dynamodb-local
+    command: ["node", "dist/index.js"]
+    restart: always
+    networks:
+      - iot-network
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iot-simulator
+    environment:
+      - NODE_ENV=development
+      - MQTT_MODE=local
+      - BACKEND_URL=http://api:3000
+      - ACTIVE_DEVICES=500
+      - PUBLISH_INTERVAL_MS=5000
+      - ANOMALY_PROBABILITY=0.05
+      - SIM_ADMIN_EMAIL=admin@iot.local
+      - SIM_ADMIN_PASSWORD=Admin123!
+    depends_on:
+      - api
+    command: ["node", "dist/iot-simulator/index.js"]
+    restart: always
+    networks:
+      - iot-network
+
 volumes:
   dynamodb-data:
 
