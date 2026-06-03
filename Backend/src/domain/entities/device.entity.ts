@@ -1,4 +1,4 @@
-import {DeviceType, DeviceStatus} from "../enums"
+import {DeviceType, DeviceStatus, AlertSeverity} from "../enums"
 
 export interface Location {
     rack: string;
@@ -19,16 +19,44 @@ export interface Metadata {
     firmwareVersion: string;
 }
 
-export interface Device {
-    PK: string;
-    SK: string;
-    deviceId: string;
-    name: string;
-    type: DeviceType;
-    location: Location;
-    status: DeviceStatus;
-    metadata: Metadata;
-    thresholds: Threshold;
-    createdAt: string;
-    updatedAt: string;
+export class Device {
+    constructor(
+        public readonly deviceId: string,
+        public name: string,
+        public type: DeviceType,
+        public location: Location,
+        public status: DeviceStatus,
+        public thresholds: Threshold,
+        public metadata: Metadata,
+        public readonly createdAt: string,
+        public updatedAt: string,
+    ) {}
+
+    public checkThresholds(value: number): AlertSeverity | null {
+        const { criticalMax, criticalMin, max, min } = this.thresholds;
+
+        if (value >= criticalMax || value <= criticalMin) {
+            return AlertSeverity.CRITICAL;
+        }
+
+        if (value >= max || value <= min) {
+            return AlertSeverity.WARNING;
+        }
+
+        return null;
+    }
+
+    public static create(data: Omit<Device, 'checkThresholds'>): Device {
+        return new Device(
+            data.deviceId,
+            data.name,
+            data.type,
+            data.location,
+            data.status,
+            data.thresholds,
+            data.metadata,
+            data.createdAt,
+            data.updatedAt
+        );
+    }
 }

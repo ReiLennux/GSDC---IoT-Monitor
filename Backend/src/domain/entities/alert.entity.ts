@@ -1,9 +1,6 @@
 import { AlertSeverity, AlertType } from "../enums";
 
 export interface Alert {
-    PK: string;
-    SK: string;
-    GSI1PK: string;
     alertId: string;
     deviceId: string;
     severity: AlertSeverity;

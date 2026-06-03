@@ -20,19 +20,15 @@ function sanitizeValue(value: unknown): unknown {
 
 export function sanitizeInput(req: Request, _res: Response, next: NextFunction): void {
   if (req.body) req.body = sanitizeValue(req.body) as typeof req.body;
-  if (req.query) {
-    const sanitized: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(req.query)) {
-      sanitized[key] = sanitizeValue(val);
+  if (req.query && typeof req.query === 'object') {
+    for (const key of Object.keys(req.query)) {
+      (req.query as any)[key] = sanitizeValue(req.query[key]);
     }
-    req.query = sanitized as typeof req.query;
   }
-  if (req.params) {
-    const sanitized: Record<string, string> = {};
-    for (const [key, val] of Object.entries(req.params)) {
-      sanitized[key] = sanitizeValue(val) as string;
+  if (req.params && typeof req.params === 'object') {
+    for (const key of Object.keys(req.params)) {
+      (req.params as any)[key] = sanitizeValue(req.params[key]);
     }
-    req.params = sanitized as typeof req.params;
   }
   next();
 }

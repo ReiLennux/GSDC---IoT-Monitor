@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { ReadingQuality } from '../../domain/enums';
 
 export class GetAllReadingsDto {
+  @IsOptional() @IsString() deviceId?: string;
   @IsOptional() @IsNumber() limit?: number;
   @IsOptional() @IsString() cursor?: string;
 }
