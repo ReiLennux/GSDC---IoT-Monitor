@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { DashboardController } from '../controllers/dashboard.controller';
-import { DashboardService } from '../../application/services/dashboard.service';
+import { DashboardUseCases } from '../../application/usecases';
 import { DeviceDynamoRepository } from '../../infrastructure/database/repositories/device.repository';
 import { ReadingDynamoRepository } from '../../infrastructure/database/repositories/reading.repository';
 import { AlertDynamoRepository } from '../../infrastructure/database/repositories/alert.repository';
@@ -11,24 +11,33 @@ const router = Router();
 const deviceRepo = new DeviceDynamoRepository();
 const readingRepo = new ReadingDynamoRepository();
 const alertRepo = new AlertDynamoRepository();
-const dashboardService = new DashboardService(deviceRepo, readingRepo, alertRepo);
-const controller = new DashboardController(dashboardService);
+
+const controller = new DashboardController(new DashboardUseCases(deviceRepo, readingRepo, alertRepo));
 
 /**
  * @openapi
  * /api/v1/dashboard/overview:
  *   get:
  *     tags: [Dashboard]
- *     summary: Get dashboard overview
+ *     summary: Get dashboard overview KPIs
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Dashboard overview data
+ *         description: Dashboard overview
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/DashboardOverview'
+ *               type: object
+ *               properties:
+ *                 totalDevices: { type: integer }
+ *                 onlineDevices: { type: integer }
+ *                 criticalDevices: { type: integer }
+ *                 activeAlerts: { type: integer }
+ *                 recentAlerts:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Alert'
  */
 router.get('/overview', authenticate, controller.getOverview);
 
@@ -68,7 +77,7 @@ router.get('/rack/:rackId', authenticate, controller.getRack);
  * /api/v1/dashboard/trends:
  *   get:
  *     tags: [Dashboard]
- *     summary: Get reading trends
+ *     summary: Get dashboard trends
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -77,10 +86,9 @@ router.get('/rack/:rackId', authenticate, controller.getRack);
  *         schema:
  *           type: integer
  *           default: 7
- *         description: Number of days
  *     responses:
  *       200:
- *         description: Trend data
+ *         description: Trends data
  *         content:
  *           application/json:
  *             schema:

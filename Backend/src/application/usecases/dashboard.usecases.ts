@@ -2,15 +2,17 @@ import { DeviceRepository } from '../../domain/repositories/device.repository';
 import { ReadingRepository } from '../../domain/repositories/reading.repository';
 import { AlertRepository } from '../../domain/repositories/alert.repository';
 import { kpiCache } from '../../infrastructure/cache/kpi-cache';
+import { BaseUseCase } from './base.usecase';
+import { GetRackSummaryDto, GetTrendsDto } from '../dtos';
 
-export class DashboardService {
+export class DashboardUseCases extends BaseUseCase {
   constructor(
     private deviceRepo: DeviceRepository,
     private readingRepo: ReadingRepository,
     private alertRepo: AlertRepository,
-  ) {}
+  ) { super(); }
 
-  async getOverview() {
+  async overview() {
     const cached = kpiCache.get('overview');
     if (cached) return cached;
 
@@ -29,19 +31,20 @@ export class DashboardService {
     return result;
   }
 
-  async getRackSummary(rackId: string) {
-    const key = `rack:${rackId}`;
+  async rackSummary(dto: GetRackSummaryDto) {
+    const key = `rack:${dto.rackId}`;
     const cached = kpiCache.get(key);
     if (cached) return cached;
 
-    const devices = await this.deviceRepo.findByRack(rackId);
-    const result = { rack: rackId, deviceCount: devices.length, devices };
+    const devices = await this.deviceRepo.findByRack(dto.rackId);
+    const result = { rack: dto.rackId, deviceCount: devices.length, devices };
 
     kpiCache.set(key, result);
     return result;
   }
 
-  async getTrends(days = 7) {
+  async trends(dto: GetTrendsDto) {
+    const days = dto.days || 7;
     const key = `trends:${days}`;
     const cached = kpiCache.get(key);
     if (cached) return cached;
@@ -63,13 +66,11 @@ export class DashboardService {
     const trends = Object.entries(readingsByType).map(([type, values]) => ({
       type,
       avg: values.reduce((a, b) => a + b, 0) / values.length || 0,
-      min: Math.min(...values),
-      max: Math.max(...values),
+      min: Math.min(...values), max: Math.max(...values),
       sampleCount: values.length,
     }));
 
     const result = { period: `${days}d`, from, to: now.toISOString(), trends };
-
     kpiCache.set(key, result);
     return result;
   }

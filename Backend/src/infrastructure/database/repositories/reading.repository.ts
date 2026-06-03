@@ -1,4 +1,4 @@
-import { BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { BatchWriteCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoRepository } from '../dynamo-repository';
 import { type PaginationResult } from '../../../domain/repositories/base.repository';
 import { Reading } from '../../../domain/entities/reading.entity';
@@ -22,6 +22,43 @@ export class ReadingDynamoRepository
             reverse: true,
         });
         return { data: result.data, nextCursor: result.nextCursor ?? null };
+    }
+
+    async findAll(
+        limit = 20,
+        cursor?: string
+    ): Promise<{ data: Reading[]; nextCursor: string | null }> {
+        const params: {
+            TableName: string;
+            FilterExpression: string;
+            ExpressionAttributeValues: Record<string, unknown>;
+            Limit: number;
+            ExclusiveStartKey?: Record<string, unknown>;
+        } = {
+            TableName: env.dynamodbTableName,
+            FilterExpression: 'begins_with(SK, :prefix)',
+            ExpressionAttributeValues: {
+                ':prefix': 'READING#',
+            },
+            Limit: limit,
+        };
+
+        if (cursor) {
+            params.ExclusiveStartKey = JSON.parse(
+                Buffer.from(cursor, 'base64').toString()
+            );
+        }
+
+        const result = await docClient.send(new ScanCommand(params));
+        const items = result.Items as Reading[];
+        const lastKey = result.LastEvaluatedKey;
+
+        return {
+            data: items,
+            nextCursor: lastKey
+                ? Buffer.from(JSON.stringify(lastKey)).toString('base64')
+                : null,
+        };
     }
 
     async createBatch(readings: Reading[]): Promise<void> {

@@ -1,42 +1,35 @@
 import { Request, Response, NextFunction } from 'express';
-import { ReadingService } from '../../application/services/reading.service';
+import { ReadingUseCases } from '../../application/usecases';
 
 export class ReadingController {
-  constructor(private readingService: ReadingService) {}
+  constructor(private uc: ReadingUseCases) {}
 
   findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { deviceId, limit, cursor } = req.query;
       if (deviceId) {
-        const readings = await this.readingService.findByDeviceId(
-          deviceId as string,
-          Number(limit) || 20,
-          cursor as string,
-        );
-        return res.json(readings);
+        // filter by specific device using DeviceUseCases or reading repo directly
+        const readings = await this.uc.findAll({ limit: Number(limit) || 20, cursor: cursor as string });
+        const filtered = { ...readings, data: readings.data.filter((r: { deviceId?: string }) => r.deviceId === deviceId) };
+        return res.json(filtered);
       }
-      res.json({ data: [], nextCursor: null });
-    } catch (err) {
-      next(err);
-    }
+      const readings = await this.uc.findAll({ limit: Number(limit) || 20, cursor: cursor as string });
+      res.json(readings);
+    } catch (err) { next(err); }
   };
 
   createBatch = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await this.readingService.createBatch(req.body.readings || []);
+      await this.uc.publishBatch(req.body);
       res.status(201).json({ message: 'Readings stored' });
-    } catch (err) {
-      next(err);
-    }
+    } catch (err) { next(err); }
   };
 
   analytics = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hours = Number(req.query.hours) || 1;
-      const data = await this.readingService.analytics(hours);
+      const data = await this.uc.analytics({ hours });
       res.json(data);
-    } catch (err) {
-      next(err);
-    }
+    } catch (err) { next(err); }
   };
 }
