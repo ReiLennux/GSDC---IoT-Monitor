@@ -1,9 +1,12 @@
+import { v4 as uuid } from 'uuid';
 import { ReadingRepository } from '../../domain/repositories/reading.repository';
 import { DeviceRepository } from '../../domain/repositories/device.repository';
+import { AlertRepository } from '../../domain/repositories/alert.repository';
 import { Reading } from '../../domain/entities/reading.entity';
-import { ReadingQuality } from '../../domain/enums';
+import { Alert } from '../../domain/entities/alert.entity';
+import { ReadingQuality, AlertSeverity, AlertType } from '../../domain/enums';
+import { emitDeviceReading, emitAlertNew } from '../../infrastructure/websocket/socket';
 import { logger } from '../../utils/logger';
-
 
 interface IncomingReading {
   deviceId: string;
@@ -17,6 +20,7 @@ export class ReadingService {
   constructor(
     private readingRepo: ReadingRepository,
     private deviceRepo: DeviceRepository,
+    private alertRepo?: AlertRepository,
   ) {}
 
   async findByDeviceId(deviceId: string, limit?: number, cursor?: string) {
@@ -39,6 +43,7 @@ export class ReadingService {
     await this.readingRepo.createBatch(items);
 
     for (const reading of readings) {
+      emitDeviceReading(reading.deviceId, reading);
       await this.evaluateThresholds(reading);
     }
   }
@@ -50,32 +55,34 @@ export class ReadingService {
 
       const { thresholds } = device;
       if (reading.value >= thresholds.criticalMax || reading.value <= thresholds.criticalMin) {
-        await this.createAlert(reading.deviceId, 'critical', reading.value);
+        await this.createAlert(reading.deviceId, AlertSeverity.CRITICAL, reading.value);
       } else if (reading.value >= thresholds.max || reading.value <= thresholds.min) {
-        await this.createAlert(reading.deviceId, 'warning', reading.value);
+        await this.createAlert(reading.deviceId, AlertSeverity.WARNING, reading.value);
       }
     } catch (error) {
-      logger.error("Error evaluating thresholds", error);
+      logger.error('Error evaluating thresholds', error);
     }
   }
 
-  private async createAlert(deviceId: string, severity: string, value: number) {
-    const { v4: uuid } = await import('uuid');
-    const { AlertDynamoRepository } = await import('../../infrastructure/database/repositories/alert.repository');
-    const alertRepo = new AlertDynamoRepository();
+  private async createAlert(deviceId: string, severity: AlertSeverity, value: number) {
+    if (!this.alertRepo) return;
 
-    await alertRepo.create({
-      PK: `ALERT#${uuid()}`,
+    const alertId = uuid();
+    const alert: Alert = {
+      PK: `ALERT#${alertId}`,
       SK: 'METADATA',
       GSI1PK: `DEVICE#${deviceId}`,
-      alertId: uuid(),
+      alertId,
       deviceId,
-      severity: severity as any,
-      type: 'threshold_exceeded' as any,
-      message: `${severity === 'critical' ? 'CRITICAL' : 'Warning'}: Device ${deviceId} value ${value}`,
+      severity,
+      type: AlertType.THRESHOLD_EXCEEDED,
+      message: `${severity === AlertSeverity.CRITICAL ? 'CRITICAL' : 'Warning'}: Device ${deviceId} value ${value}`,
       acknowledged: false,
       resolvedAt: null,
       createdAt: new Date().toISOString(),
-    });
+    };
+
+    await this.alertRepo.create(alert);
+    emitAlertNew(alert);
   }
 }

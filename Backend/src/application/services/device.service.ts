@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { DeviceRepository } from '../../domain/repositories/device.repository';
 import { Device } from '../../domain/entities/device.entity';
 import { DeviceStatus, DeviceType } from '../../domain/enums';
+import { emitDeviceStatus } from '../../infrastructure/websocket/socket';
 
 interface CreateDeviceInput {
   name: string;
@@ -58,7 +59,9 @@ export class DeviceService {
 
   async updateStatus(id: string, status: DeviceStatus) {
     await this.findById(id);
-    return this.deviceRepo.updateStatus(id, status);
+    const device = await this.deviceRepo.updateStatus(id, status);
+    emitDeviceStatus(id, status);
+    return device;
   }
 
   async delete(id: string) {

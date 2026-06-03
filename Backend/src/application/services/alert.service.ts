@@ -1,4 +1,5 @@
 import { AlertRepository } from '../../domain/repositories/alert.repository';
+import { emitAlertResolved } from '../../infrastructure/websocket/socket';
 
 export class AlertService {
   constructor(private alertRepo: AlertRepository) {}
@@ -12,10 +13,14 @@ export class AlertService {
   }
 
   async acknowledge(id: string) {
-    return this.alertRepo.acknowledge(id);
+    const alert = await this.alertRepo.acknowledge(id);
+    emitAlertResolved(id);
+    return alert;
   }
 
   async resolve(id: string) {
-    return this.alertRepo.resolve(id);
+    const alert = await this.alertRepo.resolve(id);
+    emitAlertResolved(id);
+    return alert;
   }
 }
