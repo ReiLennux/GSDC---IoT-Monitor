@@ -4,9 +4,10 @@ import { ReadingService } from '../../application/services/reading.service';
 import { DeviceDynamoRepository } from '../../infrastructure/database/repositories/device.repository';
 import { ReadingDynamoRepository } from '../../infrastructure/database/repositories/reading.repository';
 import { AlertDynamoRepository } from '../../infrastructure/database/repositories/alert.repository';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validateDto } from '../middleware/validate.middleware';
 import { BatchReadingDto } from '../validators/reading.dto';
+import { UserRole } from '../../domain/enums';
 
 const router = Router();
 
@@ -72,6 +73,44 @@ router.get('/', authenticate, controller.findAll);
  *       201:
  *         description: Readings stored
  */
-router.post('/batch', authenticate, validateDto(BatchReadingDto), controller.createBatch);
+router.post('/batch', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), validateDto(BatchReadingDto), controller.createBatch);
+
+/**
+ * @openapi
+ * /api/v1/readings/analytics:
+ *   get:
+ *     tags: [Readings]
+ *     summary: Get reading analytics (avg, min, max per unit)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: hours
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Time range in hours
+ *     responses:
+ *       200:
+ *         description: Analytics data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   unit:
+ *                     type: string
+ *                   count:
+ *                     type: integer
+ *                   avg:
+ *                     type: number
+ *                   min:
+ *                     type: number
+ *                   max:
+ *                     type: number
+ */
+router.get('/analytics', authenticate, controller.analytics);
 
 export default router;

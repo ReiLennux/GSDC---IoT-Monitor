@@ -2,10 +2,11 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { AuthService } from '../../application/services/auth.service';
 import { UserDynamoRepository } from '../../infrastructure/database/repositories/user.repository';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 import { authRateLimit } from '../middleware/rate-limit.middleware';
 import { validateDto } from '../middleware/validate.middleware';
 import { RegisterDto, LoginDto, RefreshDto } from '../validators/auth.dto';
+import { UserRole } from '../../domain/enums';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ const controller = new AuthController(authService);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/register', authRateLimit, validateDto(RegisterDto), controller.register);
+router.post('/register', authenticate, authorize(UserRole.ADMIN), authRateLimit, validateDto(RegisterDto), controller.register);
 
 /**
  * @openapi
