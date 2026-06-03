@@ -1,5 +1,6 @@
 import { AlertRepository } from '../../domain/repositories/alert.repository';
 import { emitAlertResolved } from '../../infrastructure/websocket/socket';
+import { kpiCache } from '../../infrastructure/cache/kpi-cache';
 
 export class AlertService {
   constructor(private alertRepo: AlertRepository) {}
@@ -15,12 +16,14 @@ export class AlertService {
   async acknowledge(id: string) {
     const alert = await this.alertRepo.acknowledge(id);
     emitAlertResolved(id);
+    kpiCache.del('overview');
     return alert;
   }
 
   async resolve(id: string) {
     const alert = await this.alertRepo.resolve(id);
     emitAlertResolved(id);
+    kpiCache.del('overview');
     return alert;
   }
 }

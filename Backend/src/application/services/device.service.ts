@@ -3,6 +3,7 @@ import { DeviceRepository } from '../../domain/repositories/device.repository';
 import { Device } from '../../domain/entities/device.entity';
 import { DeviceStatus, DeviceType } from '../../domain/enums';
 import { emitDeviceStatus } from '../../infrastructure/websocket/socket';
+import { kpiCache } from '../../infrastructure/cache/kpi-cache';
 
 interface CreateDeviceInput {
   name: string;
@@ -46,27 +47,33 @@ export class DeviceService {
       createdAt: now,
       updatedAt: now,
     };
-    return this.deviceRepo.create(device);
+    const result = this.deviceRepo.create(device);
+    kpiCache.del('overview');
+    return result;
   }
 
   async update(id: string, data: Partial<Device>) {
     await this.findById(id);
-    return this.deviceRepo.update(`DEVICE#${id}`, 'METADATA', {
+    const result = this.deviceRepo.update(`DEVICE#${id}`, 'METADATA', {
       ...data,
       updatedAt: new Date().toISOString(),
     });
+    kpiCache.del('overview');
+    return result;
   }
 
   async updateStatus(id: string, status: DeviceStatus) {
     await this.findById(id);
     const device = await this.deviceRepo.updateStatus(id, status);
     emitDeviceStatus(id, status);
+    kpiCache.del('overview');
     return device;
   }
 
   async delete(id: string) {
     await this.findById(id);
     await this.deviceRepo.delete(`DEVICE#${id}`, 'METADATA');
+    kpiCache.del('overview');
   }
 
   async getStatsSummary() {
