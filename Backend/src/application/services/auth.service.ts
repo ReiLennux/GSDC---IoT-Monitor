@@ -68,12 +68,12 @@ export class AuthService {
   async login(input: LoginInput): Promise<{ user: { id: string; email: string; role: UserRole }; tokens: AuthTokens }> {
     const user = await this.userRepo.findByEmail(input.email);
     if (!user) {
-      throw { status: 401, message: 'Invalid credentials' };
+      throw { status: 401, message: 'User not found' };
     }
 
     const valid = await bcrypt.compare(input.password, user.passwordHash);
     if (!valid) {
-      throw { status: 401, message: 'Invalid credentials' };
+      throw { status: 401, message: 'Invalid password' };
     }
 
     const tokens = this.generateTokens({ sub: user.userId, email: user.email, role: user.role });
