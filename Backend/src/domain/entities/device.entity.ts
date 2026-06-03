@@ -7,10 +7,10 @@ export interface Location {
 }
 
 export interface Threshold {
-    min?: number;
-    max?: number;
-    criticalMin?: number;
-    criticalMax?: number;
+    min: number;
+    max: number;
+    criticalMin: number;
+    criticalMax: number;
 }
 
 export interface Metadata {
