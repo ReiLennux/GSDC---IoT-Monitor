@@ -14,26 +14,30 @@ import {
 } from '../../domain/repositories/base.repository';
 import { env } from '../../config/env';
 
-export abstract class DynamoRepository<T extends { PK: string; SK: string }>
-    implements BaseRepository<T>
-{
+export abstract class DynamoRepository<T> implements BaseRepository<T> {
+    protected abstract toPersistence(item: T): any;
+    protected abstract fromPersistence(item: any): T;
+
     async create(item: T): Promise<T> {
+        const persistenceItem = this.toPersistence(item);
         await docClient.send(new PutCommand({
             TableName: env.dynamodbTableName,
-            Item: item,
+            Item: persistenceItem,
         }));
         return item;
     }
 
-    async findById(pk: string, sk: string): Promise<T | null> {
+    protected async _findById(pk: string, sk: string): Promise<T | null> {
         const result = await docClient.send(new GetCommand({
             TableName: env.dynamodbTableName,
             Key: { PK: pk, SK: sk },
         }));
-        return (result.Item as T) || null;
+        return result.Item ? this.fromPersistence(result.Item) : null;
     }
 
-    async update(pk: string, sk: string, data: Partial<T>): Promise<T> {
+    protected async _update(pk: string, sk: string, data: Partial<T>): Promise<T> {
+        // Note: Partial<T> mapping might be tricky if keys are renamed, 
+        // but here we mostly use the same names for non-key fields.
         const keys = Object.keys(data as object);
         const setExpression = keys.map((_, i) => `#f${i} = :v${i}`).join(', ');
         const attrNames = keys.reduce(
@@ -53,17 +57,17 @@ export abstract class DynamoRepository<T extends { PK: string; SK: string }>
             ExpressionAttributeValues: attrValues,
             ReturnValues: 'ALL_NEW',
         }));
-        return result.Attributes as T;
+        return this.fromPersistence(result.Attributes);
     }
 
-    async delete(pk: string, sk: string): Promise<void> {
+    protected async _delete(pk: string, sk: string): Promise<void> {
         await docClient.send(new DeleteCommand({
             TableName: env.dynamodbTableName,
             Key: { PK: pk, SK: sk },
         }));
     }
 
-    async query(pk: string, options?: QueryOptions): Promise<PaginationResult<T>> {
+    protected async _query(pk: string, options?: QueryOptions & { skBeginsWith?: string }): Promise<PaginationResult<T>> {
         const exprAttrValues: Record<string, unknown> = { ':pk': pk };
 
         const params: QueryCommandInput = {
@@ -88,7 +92,7 @@ export abstract class DynamoRepository<T extends { PK: string; SK: string }>
         }
 
         const result = await docClient.send(new QueryCommand(params));
-        const items = result.Items as T[];
+        const items = (result.Items || []).map(item => this.fromPersistence(item));
         const lastKey = result.LastEvaluatedKey;
 
         return {

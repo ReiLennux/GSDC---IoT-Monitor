@@ -10,6 +10,24 @@ export class UserDynamoRepository
     extends DynamoRepository<User>
     implements IUserRepository
 {
+    protected toPersistence(item: User): any {
+        return {
+            ...item,
+            PK: `USER#${item.userId}`,
+            SK: 'METADATA',
+            GSI1PK: `EMAIL#${item.email}`,
+        };
+    }
+
+    protected fromPersistence(item: any): User {
+        const { PK, SK, GSI1PK, ...rest } = item;
+        return rest as User;
+    }
+
+    async findById(id: string): Promise<User | null> {
+        return this._findById(`USER#${id}`, 'METADATA');
+    }
+
     async findByEmail(email: string): Promise<User | null> {
         const result = await docClient.send(new QueryCommand({
             TableName: env.dynamodbTableName,
@@ -19,16 +37,16 @@ export class UserDynamoRepository
                 ':email': `EMAIL#${email}`,
             },
         }));
-        return (result.Items?.[0] as User) || null;
+        return result.Items?.[0] ? this.fromPersistence(result.Items[0]) : null;
     }
 
     async saveRefreshToken(userId: string, jti: string, ttl: number): Promise<void> {
         await docClient.send(new UpdateCommand({
             TableName: env.dynamodbTableName,
             Key: { PK: `REFRESH#${jti}`, SK: `REFRESH#${jti}` },
-            UpdateExpression: 'SET GSI1PK = :user, GSI1SK = :sk, #uid = :userId, #j = :jti, #iv = :valid, TTL = :ttl',
+            UpdateExpression: 'SET GSI1PK = :user, GSI1SK = :sk, #uid = :userId, #j = :jti, #iv = :valid, #t = :ttl',
             ExpressionAttributeNames: {
-                '#uid': 'userId', '#j': 'jti', '#iv': 'isValid',
+                '#uid': 'userId', '#j': 'jti', '#iv': 'isValid', '#t': 'TTL',
             },
             ExpressionAttributeValues: {
                 ':user': `USER#${userId}`,
@@ -46,7 +64,9 @@ export class UserDynamoRepository
             TableName: env.dynamodbTableName,
             Key: { PK: `REFRESH#${jti}`, SK: `REFRESH#${jti}` },
         }));
-        return (result.Item as RefreshTokenRecord) || null;
+        if (!result.Item) return null;
+        const { PK, SK, GSI1PK, GSI1SK, ...rest } = result.Item;
+        return rest as RefreshTokenRecord;
     }
 
     async invalidateRefreshToken(jti: string): Promise<void> {

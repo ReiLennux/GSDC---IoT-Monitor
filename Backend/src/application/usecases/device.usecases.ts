@@ -4,8 +4,6 @@ import { ReadingRepository } from '../../domain/repositories/reading.repository'
 import { AlertRepository } from '../../domain/repositories/alert.repository';
 import { Device } from '../../domain/entities/device.entity';
 import { DeviceStatus } from '../../domain/enums';
-import { emitDeviceStatus } from '../../infrastructure/websocket/socket';
-import { kpiCache } from '../../infrastructure/cache/kpi-cache';
 import { BaseUseCase } from './base.usecase';
 import {
   CreateDeviceDto, UpdateDeviceDto, UpdateStatusDto, DeleteDeviceDto,
@@ -17,13 +15,15 @@ export class DeviceUseCases extends BaseUseCase {
     private deviceRepo: DeviceRepository,
     private readingRepo: ReadingRepository,
     private alertRepo: AlertRepository,
+    private onDeviceStatusChanged: (deviceId: string, status: string) => void,
+    private onOverviewInvalidated: () => void,
   ) { super(); }
 
   async create(dto: CreateDeviceDto): Promise<Device> {
     const deviceId = uuid();
     const now = new Date().toISOString();
-    const device: Device = {
-      PK: `DEVICE#${deviceId}`, SK: 'METADATA', deviceId,
+    const device = Device.create({
+      deviceId,
       name: dto.name, type: dto.type, location: dto.location,
       status: DeviceStatus.ONLINE,
       thresholds: {
@@ -36,24 +36,24 @@ export class DeviceUseCases extends BaseUseCase {
         firmwareVersion: dto.metadata?.firmwareVersion ?? '',
       },
       createdAt: now, updatedAt: now,
-    };
+    });
     await this.deviceRepo.create(device);
-    kpiCache.del('overview');
+    this.onOverviewInvalidated();
     return device;
   }
 
   async list(dto: ListDevicesDto) {
-    return this.deviceRepo.query('DEVICE#', { limit: dto.limit ?? 500, cursor: dto.cursor });
+    return this.deviceRepo.query({ limit: dto.limit ?? 500, cursor: dto.cursor });
   }
 
   async getById(dto: GetDeviceDto): Promise<Device> {
-    const device = await this.deviceRepo.findById(`DEVICE#${dto.id}`, 'METADATA');
+    const device = await this.deviceRepo.findById(dto.id);
     if (!device) this.notFound('Device not found');
     return device!;
   }
 
   async update(dto: UpdateDeviceDto): Promise<Device> {
-    const existing = await this.deviceRepo.findById(`DEVICE#${dto.id}`, 'METADATA');
+    const existing = await this.deviceRepo.findById(dto.id);
     if (!existing) this.notFound('Device not found');
 
     const data: Record<string, unknown> = { updatedAt: new Date().toISOString() };
@@ -63,31 +63,31 @@ export class DeviceUseCases extends BaseUseCase {
     if (dto.thresholds !== undefined) data.thresholds = { ...existing.thresholds, ...dto.thresholds };
     if (dto.metadata !== undefined) data.metadata = { ...existing.metadata, ...dto.metadata };
 
-    const device = await this.deviceRepo.update(`DEVICE#${dto.id}`, 'METADATA', data as Partial<Device>);
-    kpiCache.del('overview');
+    const device = await this.deviceRepo.update(dto.id, data as Partial<Device>);
+    this.onOverviewInvalidated();
     return device;
   }
 
   async updateStatus(dto: UpdateStatusDto): Promise<Device> {
-    const existing = await this.deviceRepo.findById(`DEVICE#${dto.id}`, 'METADATA');
+    const existing = await this.deviceRepo.findById(dto.id);
     if (!existing) this.notFound('Device not found');
 
     const device = await this.deviceRepo.updateStatus(dto.id, dto.status);
-    emitDeviceStatus(dto.id, dto.status);
-    kpiCache.del('overview');
+    this.onDeviceStatusChanged(dto.id, dto.status);
+    this.onOverviewInvalidated();
     return device;
   }
 
   async delete(dto: DeleteDeviceDto): Promise<void> {
-    const existing = await this.deviceRepo.findById(`DEVICE#${dto.id}`, 'METADATA');
+    const existing = await this.deviceRepo.findById(dto.id);
     if (!existing) this.notFound('Device not found');
 
-    await this.deviceRepo.delete(`DEVICE#${dto.id}`, 'METADATA');
-    kpiCache.del('overview');
+    await this.deviceRepo.delete(dto.id);
+    this.onOverviewInvalidated();
   }
 
   async stats() {
-    const devices = (await this.deviceRepo.query('DEVICE#', { limit: 500 })).data;
+    const devices = (await this.deviceRepo.query({ limit: 500 })).data;
     return {
       total: devices.length,
       online: devices.filter(d => d.status === DeviceStatus.ONLINE).length,

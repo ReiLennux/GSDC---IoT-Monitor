@@ -1,8 +1,17 @@
-import { BaseRepository } from './base.repository';
+import { BaseRepository, PaginationResult } from './base.repository';
 import { Reading } from '../entities/reading.entity';
 
+export interface AnalyticsResult {
+  unit: string;
+  count: number;
+  avg: number;
+  min: number;
+  max: number;
+}
+
 export interface ReadingRepository extends BaseRepository<Reading> {
-  findByDeviceId(deviceId: string, limit?: number, cursor?: string): Promise<{ data: Reading[]; nextCursor: string | null }>;
-  findAll(limit?: number, cursor?: string): Promise<{ data: Reading[]; nextCursor: string | null }>;
+  findByDeviceId(deviceId: string, limit?: number, cursor?: string): Promise<PaginationResult<Reading>>;
+  findAll(limit?: number, cursor?: string): Promise<PaginationResult<Reading>>;
   createBatch(readings: Reading[]): Promise<void>;
+  getAnalytics(hours: number): Promise<AnalyticsResult[]>;
 }

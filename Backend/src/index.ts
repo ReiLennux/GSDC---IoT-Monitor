@@ -11,6 +11,7 @@ import { errorHandler } from './presentation/middleware/error-handler';
 import { sanitizeInput } from './presentation/middleware/sanitize.middleware';
 import routes from './presentation/routes';
 import { initSocketServer } from './infrastructure/websocket/socket';
+import { createSocketHandlers } from './presentation/socket-handlers';
 import { logger } from './utils/logger';
 
 async function checkDatabase() {
@@ -45,12 +46,16 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/v1', routes);
 
+app.get('/api-docs-json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(errorHandler);
 
-initSocketServer(httpServer);
+initSocketServer(httpServer, createSocketHandlers());
 
 httpServer.listen(env.port, async () => {
   logger.info(`Server running on port ${env.port}`);

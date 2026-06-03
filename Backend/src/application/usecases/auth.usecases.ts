@@ -1,23 +1,27 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
-import { env } from '../../config/env';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import { UserRole } from '../../domain/enums';
 import { BaseUseCase } from './base.usecase';
 import { RegisterDto, LoginDto, RefreshDto, LogoutDto, GetCurrentUserDto } from '../dtos';
 import { logger } from '../../utils/logger';
+import { HashService } from '../ports/hash-service';
+import { TokenService } from '../ports/token-service';
 
 const ACCESS_EXPIRY = '15m';
 const REFRESH_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 export class AuthUseCases extends BaseUseCase {
-  constructor(private userRepo: UserRepository) { super(); }
+  constructor(
+    private userRepo: UserRepository,
+    private hashService: HashService,
+    private accessTokenService: TokenService,
+    private refreshTokenService: TokenService,
+  ) { super(); }
 
   private generateTokens(userId: string, email: string, role: UserRole) {
     const jti = uuid();
-    const accessToken = jwt.sign({ sub: userId, email, role }, env.jwtSecret, { expiresIn: ACCESS_EXPIRY });
-    const refreshToken = jwt.sign({ sub: userId, email, role, jti }, env.jwtRefreshSecret, { expiresIn: `${REFRESH_EXPIRY_SECONDS}s` });
+    const accessToken = this.accessTokenService.sign({ sub: userId, email, role }, { expiresIn: ACCESS_EXPIRY });
+    const refreshToken = this.refreshTokenService.sign({ sub: userId, email, role, jti }, { expiresIn: `${REFRESH_EXPIRY_SECONDS}s` });
     return { accessToken, refreshToken, jti };
   }
 
@@ -25,12 +29,11 @@ export class AuthUseCases extends BaseUseCase {
     const existing = await this.userRepo.findByEmail(dto.email);
     if (existing) this.conflict('Email already registered');
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await this.hashService.hash(dto.password);
     const userId = uuid();
     const role = dto.role || UserRole.VIEWER;
 
     await this.userRepo.create({
-      PK: `USER#${userId}`, SK: 'METADATA', GSI1PK: `EMAIL#${dto.email}`,
       userId, email: dto.email, passwordHash, role, isActive: true,
     });
 
@@ -46,7 +49,7 @@ export class AuthUseCases extends BaseUseCase {
     const user = await this.userRepo.findByEmail(dto.email);
     if (!user) this.unauthorized('User not found');
 
-    const valid = await bcrypt.compare(dto.password, user!.passwordHash);
+    const valid = await this.hashService.compare(dto.password, user!.passwordHash);
     if (!valid) this.unauthorized('Invalid password');
 
     const { accessToken, refreshToken, jti } = this.generateTokens(user!.userId, user!.email, user!.role);
@@ -60,7 +63,7 @@ export class AuthUseCases extends BaseUseCase {
   async refresh(dto: RefreshDto) {
     let payload: { sub: string; email: string; role: UserRole; jti: string };
     try {
-      payload = jwt.verify(dto.refreshToken, env.jwtRefreshSecret) as typeof payload;
+      payload = this.refreshTokenService.verify(dto.refreshToken);
     } catch {
       this.unauthorized('Invalid refresh token');
     }
@@ -70,7 +73,7 @@ export class AuthUseCases extends BaseUseCase {
     const tokenRecord = await this.userRepo.findRefreshToken(payload!.jti);
     if (!tokenRecord || !tokenRecord.isValid) this.unauthorized('Refresh token has been revoked');
 
-    const user = await this.userRepo.findById(`USER#${payload!.sub}`, 'METADATA');
+    const user = await this.userRepo.findById(payload!.sub);
     if (!user) this.unauthorized('User not found');
     if (!user.isActive) this.unauthorized('User account is inactive');
 
@@ -83,13 +86,14 @@ export class AuthUseCases extends BaseUseCase {
     return { accessToken, refreshToken };
   }
 
+
   async logout(dto: LogoutDto) {
     await this.userRepo.invalidateAllUserTokens(dto.userId);
     logger.info(`User logged out: ${dto.userId}`);
   }
 
   async getMe(dto: GetCurrentUserDto) {
-    const user = await this.userRepo.findById(`USER#${dto.userId}`, 'METADATA');
+    const user = await this.userRepo.findById(dto.userId);
     if (!user) return null;
     return { id: user.userId, email: user.email, role: user.role };
   }
