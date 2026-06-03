@@ -16,7 +16,62 @@ const alertRepo = new AlertDynamoRepository();
 const readingService = new ReadingService(readingRepo, deviceRepo, alertRepo);
 const controller = new ReadingController(readingService);
 
+/**
+ * @openapi
+ * /api/v1/readings:
+ *   get:
+ *     tags: [Readings]
+ *     summary: List readings
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: deviceId
+ *         schema:
+ *           type: string
+ *         description: Filter by device
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: cursor
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of readings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Reading'
+ *                 nextCursor:
+ *                   type: string
+ *                   nullable: true
+ */
 router.get('/', authenticate, controller.findAll);
-router.post('/batch', validateDto(BatchReadingDto), controller.createBatch);
+
+/**
+ * @openapi
+ * /api/v1/readings/batch:
+ *   post:
+ *     tags: [Readings]
+ *     summary: Submit batch readings (IoT Gateway)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BatchReadingInput'
+ *     responses:
+ *       201:
+ *         description: Readings stored
+ */
+router.post('/batch', authenticate, validateDto(BatchReadingDto), controller.createBatch);
 
 export default router;
