@@ -1,18 +1,11 @@
 import { Router } from 'express';
 import { DashboardController } from '../controllers/dashboard.controller';
-import { DashboardUseCases } from '../../application/usecases';
-import { DeviceDynamoRepository } from '../../infrastructure/database/repositories/device.repository';
-import { ReadingDynamoRepository } from '../../infrastructure/database/repositories/reading.repository';
-import { AlertDynamoRepository } from '../../infrastructure/database/repositories/alert.repository';
+import { dashboardUseCases } from '../../container';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
-const deviceRepo = new DeviceDynamoRepository();
-const readingRepo = new ReadingDynamoRepository();
-const alertRepo = new AlertDynamoRepository();
-
-const controller = new DashboardController(new DashboardUseCases(deviceRepo, readingRepo, alertRepo));
+const controller = new DashboardController(dashboardUseCases);
 
 /**
  * @openapi

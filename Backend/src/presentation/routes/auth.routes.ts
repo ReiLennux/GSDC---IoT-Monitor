@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
-import { AuthUseCases } from '../../application/usecases';
+import { authUseCases } from '../../container';
 import { RegisterDto, LoginDto, RefreshDto } from '../../application/dtos';
-import { UserDynamoRepository } from '../../infrastructure/database/repositories/user.repository';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { authRateLimit } from '../middleware/rate-limit.middleware';
 import { validateDto } from '../middleware/validate.middleware';
@@ -10,7 +9,7 @@ import { UserRole } from '../../domain/enums';
 
 const router = Router();
 
-const controller = new AuthController(new AuthUseCases(new UserDynamoRepository()));
+const controller = new AuthController(authUseCases);
 
 /**
  * @openapi

@@ -1,21 +1,14 @@
 import { Router } from 'express';
 import { DeviceController } from '../controllers/device.controller';
-import { DeviceUseCases } from '../../application/usecases';
+import { deviceUseCases } from '../../container';
 import { CreateDeviceDto, UpdateDeviceDto, UpdateStatusDto } from '../../application/dtos';
-import { DeviceDynamoRepository } from '../../infrastructure/database/repositories/device.repository';
-import { ReadingDynamoRepository } from '../../infrastructure/database/repositories/reading.repository';
-import { AlertDynamoRepository } from '../../infrastructure/database/repositories/alert.repository';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validateDto } from '../middleware/validate.middleware';
 import { UserRole } from '../../domain/enums';
 
 const router = Router();
 
-const deviceRepo = new DeviceDynamoRepository();
-const readingRepo = new ReadingDynamoRepository();
-const alertRepo = new AlertDynamoRepository();
-
-const controller = new DeviceController(new DeviceUseCases(deviceRepo, readingRepo, alertRepo));
+const controller = new DeviceController(deviceUseCases);
 
 /**
  * @openapi

@@ -1,10 +1,20 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
+
+export interface AcknowledgeAlertHandler {
+  (alertId: string): Promise<unknown>;
+}
+
+export interface SocketHandlers {
+  acknowledgeAlert: AcknowledgeAlertHandler;
+}
 
 let io: Server;
 
-export function initSocketServer(httpServer: HttpServer): Server {
+export function initSocketServer(httpServer: HttpServer, handlers?: SocketHandlers): Server {
   io = new Server(httpServer, {
     cors: {
       origin: '*',
@@ -27,6 +37,28 @@ export function initSocketServer(httpServer: HttpServer): Server {
 
     socket.on('unsubscribe:device', (deviceId: string) => {
       socket.leave(`device:${deviceId}`);
+    });
+
+    socket.on('acknowledge:alert', async (data: { alertId: string; token: string }) => {
+      try {
+        if (!data.token) {
+          socket.emit('acknowledge:alert:error', { message: 'Missing token' });
+          return;
+        }
+        const payload = jwt.verify(data.token, env.jwtSecret) as { sub: string };
+        if (!payload?.sub) {
+          socket.emit('acknowledge:alert:error', { message: 'Invalid token' });
+          return;
+        }
+        if (!handlers?.acknowledgeAlert) {
+          socket.emit('acknowledge:alert:error', { message: 'Handler not available' });
+          return;
+        }
+        const alert = await handlers.acknowledgeAlert(data.alertId);
+        socket.emit('acknowledge:alert:done', alert);
+      } catch {
+        socket.emit('acknowledge:alert:error', { message: 'Failed to acknowledge alert' });
+      }
     });
 
     socket.on('disconnect', () => {

@@ -1,13 +1,12 @@
 import { Router } from 'express';
 import { AlertController } from '../controllers/alert.controller';
-import { AlertUseCases } from '../../application/usecases';
-import { AlertDynamoRepository } from '../../infrastructure/database/repositories/alert.repository';
+import { alertUseCases } from '../../container';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { UserRole } from '../../domain/enums';
 
 const router = Router();
 
-const controller = new AlertController(new AlertUseCases(new AlertDynamoRepository()));
+const controller = new AlertController(alertUseCases);
 
 /**
  * @openapi

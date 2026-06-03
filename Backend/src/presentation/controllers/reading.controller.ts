@@ -7,13 +7,11 @@ export class ReadingController {
   findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { deviceId, limit, cursor } = req.query;
-      if (deviceId) {
-        // filter by specific device using DeviceUseCases or reading repo directly
-        const readings = await this.uc.findAll({ limit: Number(limit) || 20, cursor: cursor as string });
-        const filtered = { ...readings, data: readings.data.filter((r: { deviceId?: string }) => r.deviceId === deviceId) };
-        return res.json(filtered);
-      }
-      const readings = await this.uc.findAll({ limit: Number(limit) || 20, cursor: cursor as string });
+      const readings = await this.uc.findAll({
+        deviceId: deviceId as string | undefined,
+        limit: Number(limit) || 20,
+        cursor: cursor as string,
+      });
       res.json(readings);
     } catch (err) { next(err); }
   };
