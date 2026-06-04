@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Device } from './models/device.model';
+import { Reading } from './models/reading.model';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -36,5 +37,11 @@ export class DeviceService {
 
   getById(id: string): Observable<Device> {
     return this.http.get<Device>(`${this.apiUrl}/${id}`);
+  }
+
+  getReadings(deviceId: string, limit: number = 50, cursor?: string): Observable<{ data: Reading[], nextCursor: string | null }> {
+    let url = `${this.apiUrl}/${deviceId}/readings?limit=${limit}`;
+    if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+    return this.http.get<{ data: Reading[], nextCursor: string | null }>(url);
   }
 }

@@ -18,7 +18,8 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { SelectModule } from 'primeng/select';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DeviceService } from '../../../core/device';
 import { Device } from '../../../core/models/device.model';
@@ -40,6 +41,8 @@ import { DeviceFormComponent } from '../device-form/device-form';
     InputIconModule,
     ToastModule,
     ConfirmDialogModule,
+    SelectModule,
+    FormsModule,
     ReactiveFormsModule,
     HasRoleDirective,
     DeviceFormComponent,
@@ -66,6 +69,7 @@ export class DeviceList implements OnInit, OnDestroy {
   private searchSubscription!: Subscription;
   private searchTerm = '';
   private statusFilter: string | null = null;
+  typeFilter = signal<string | null>(null);
   private lastLazyEvent: TableLazyLoadEvent = { first: 0, rows: 10 };
 
   deviceDialog = signal(false);
@@ -103,7 +107,7 @@ export class DeviceList implements OnInit, OnDestroy {
     const sortField = typeof e.sortField === 'string' ? e.sortField : undefined;
     const sortOrder = e.sortOrder ?? undefined;
 
-    const useClientPaging = this.searchTerm.length > 0 || !!this.statusFilter;
+    const useClientPaging = this.searchTerm.length > 0 || !!this.statusFilter || !!this.typeFilter();
 
     this.loading.set(true);
 
@@ -113,6 +117,9 @@ export class DeviceList implements OnInit, OnDestroy {
           let items = res.data;
           if (this.statusFilter) {
             items = items.filter((d) => d.status === this.statusFilter);
+          }
+          if (this.typeFilter()) {
+            items = items.filter((d) => d.type === this.typeFilter());
           }
           if (this.searchTerm) {
             items = items.filter((d) => this.matchesSearch(d, this.searchTerm));
@@ -218,6 +225,12 @@ export class DeviceList implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  onTypeFilterChange(type: string | null) {
+    this.typeFilter.set(type);
+    this.lastLazyEvent = { ...this.lastLazyEvent, first: 0 };
+    this.loadDevicesLazy();
   }
 
   getSeverity(status: string) {

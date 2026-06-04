@@ -1,0 +1,62 @@
+<p-dialog 
+    [(visible)]="visible" 
+    [breakpoints]="{ '960px': '75vw', '640px': '90vw' }"
+    [style]="{ width: '600px' }" 
+    [header]="isEdit ? 'Editar Dispositivo' : 'Nuevo Dispositivo'" 
+    [modal]="true" 
+    styleClass="p-fluid"
+    (onHide)="onHide()">
+    
+    <ng-template pTemplate="content">
+        <form [formGroup]="deviceForm">
+            <div class="mb-3">
+                <h6 class="text-primary font-bold mb-1 text-sm uppercase">Información Básica</h6>
+                <div class="grid formgrid">
+                    <div class="field col-12 md:col-6 mb-2">
+                        <label for="name" class="font-semibold text-sm">Nombre</label>
+                        <input pInputText id="name" formControlName="name" placeholder="Ej. Temp-01" class="w-full" />
+                    </div>
+                    <div class="field col-12 md:col-6 mb-2">
+                        <label for="type" class="font-semibold text-sm">Tipo de Sensor</label>
+                        <p-select id="type" [options]="deviceTypes" formControlName="type" optionLabel="label" optionValue="value" placeholder="Seleccionar" class="w-full"></p-select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <h6 class="text-primary font-bold mb-1 text-sm uppercase">Ubicación</h6>
+                <div class="grid formgrid">
+                    <div class="field col-12 md:col-4 mb-2"><label for="rack" class="font-semibold text-sm">Rack</label><input pInputText id="rack" formControlName="rack" class="w-full" /></div>
+                    <div class="field col-12 md:col-4 mb-2"><label for="position" class="font-semibold text-sm">Posición</label><input pInputText id="position" formControlName="position" class="w-full" /></div>
+                    <div class="field col-12 md:col-4 mb-2"><label for="floor" class="font-semibold text-sm">Piso</label><input pInputText type="number" id="floor" formControlName="floor" class="w-full" /></div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <h6 class="text-primary font-bold mb-1 text-sm uppercase">Metadatos</h6>
+                <div class="grid formgrid">
+                    <div class="field col-12 md:col-6 mb-2"><label for="manufacturer" class="font-semibold text-sm">Fabricante</label><input pInputText id="manufacturer" formControlName="manufacturer" class="w-full" /></div>
+                    <div class="field col-12 md:col-6 mb-2"><label for="model" class="font-semibold text-sm">Modelo</label><input pInputText id="model" formControlName="model" class="w-full" /></div>
+                    <div class="field col-12 mb-0"><label for="firmwareVersion" class="font-semibold text-sm">Versión Firmware</label><input pInputText id="firmwareVersion" formControlName="firmwareVersion" class="w-full" /></div>
+                </div>
+            </div>
+            
+            <div class="mb-0">
+                <h6 class="text-primary font-bold mb-1 text-sm uppercase">Umbrales</h6>
+                <div class="grid formgrid">
+                    <div class="field col-6 md:col-3 mb-0"><label for="min" class="font-semibold text-sm">Mín</label><input pInputText type="number" id="min" formControlName="min" class="w-full" /></div>
+                    <div class="field col-6 md:col-3 mb-0"><label for="max" class="font-semibold text-sm">Máx</label><input pInputText type="number" id="max" formControlName="max" class="w-full" /></div>
+                    <div class="field col-6 md:col-3 mb-0"><label for="criticalMin" class="font-semibold text-sm">Crít. Mín</label><input pInputText type="number" id="criticalMin" formControlName="criticalMin" class="w-full" /></div>
+                    <div class="field col-6 md:col-3 mb-0"><label for="criticalMax" class="font-semibold text-sm">Crít. Máx</label><input pInputText type="number" id="criticalMax" formControlName="criticalMax" class="w-full" /></div>
+                </div>
+            </div>
+        </form>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-content-end gap-2">
+            <p-button label="Cancelar" icon="pi pi-times" [text]="true" (onClick)="onHide()"></p-button>
+            <p-button label="Guardar" icon="pi pi-check" (onClick)="save()" [disabled]="deviceForm.invalid"></p-button>
+        </div>
+    </ng-template>
+</p-dialog>

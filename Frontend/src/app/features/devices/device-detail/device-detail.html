@@ -1,4 +1,4 @@
-<div class="p-card p-4 surface-card border-round shadow-1">
+<div >
     <div class="flex justify-content-between align-items-center mb-4">
         <h2 class="m-0 text-2xl font-bold text-900">Detalles del Dispositivo</h2>
         <p-button label="Regresar" icon="pi pi-arrow-left" [text]="true" routerLink="/devices"></p-button>
@@ -61,6 +61,106 @@
                         </div>
                     </div>
                 </p-panel>
+            </div>
+        </div>
+
+        <div class="grid mt-4">
+            <div class="col-12">
+                <p-card header="Streaming en Vivo" styleClass="shadow-2">
+                    @if (streamingData()[0].series.length === 0) {
+                        <div class="flex flex-column align-items-center justify-content-center text-500 gap-2 py-5">
+                            <i class="pi pi-chart-line text-4xl"></i>
+                            <span>Esperando lecturas en vivo del dispositivo…</span>
+                        </div>
+                    } @else {
+                        <div class="chart-container">
+                            <ngx-charts-line-chart
+                                [results]="streamingData()"
+                                [xAxis]="true"
+                                [yAxis]="true"
+                                [scheme]="colorScheme()"
+                                [animations]="false"
+                                [timeline]="true"
+                            />
+                        </div>
+                    }
+                </p-card>
+            </div>
+        </div>
+
+        <div class="grid mt-4">
+            <div class="col-12 sm:col-6 lg:col-3">
+                <p-card styleClass="shadow-2 text-center h-full">
+                    <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Actual</span>
+                    <div class="text-3xl font-bold text-900">
+                        {{ stats()?.current ?? '—' }}
+                        @if (stats()?.unit) {
+                            <span class="text-base text-500 ml-1">{{ stats()?.unit }}</span>
+                        }
+                    </div>
+                </p-card>
+            </div>
+            <div class="col-12 sm:col-6 lg:col-3">
+                <p-card styleClass="shadow-2 text-center h-full">
+                    <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Promedio</span>
+                    <div class="text-3xl font-bold text-900">
+                        {{ stats()?.avg ?? '—' }}
+                        @if (stats()?.unit) {
+                            <span class="text-base text-500 ml-1">{{ stats()?.unit }}</span>
+                        }
+                    </div>
+                </p-card>
+            </div>
+            <div class="col-12 sm:col-6 lg:col-3">
+                <p-card styleClass="shadow-2 text-center h-full">
+                    <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Mínimo</span>
+                    <div class="text-3xl font-bold text-900">
+                        {{ stats()?.min ?? '—' }}
+                        @if (stats()?.unit) {
+                            <span class="text-base text-500 ml-1">{{ stats()?.unit }}</span>
+                        }
+                    </div>
+                </p-card>
+            </div>
+            <div class="col-12 sm:col-6 lg:col-3">
+                <p-card styleClass="shadow-2 text-center h-full">
+                    <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Máximo</span>
+                    <div class="text-3xl font-bold text-900">
+                        {{ stats()?.max ?? '—' }}
+                        @if (stats()?.unit) {
+                            <span class="text-base text-500 ml-1">{{ stats()?.unit }}</span>
+                        }
+                    </div>
+                </p-card>
+            </div>
+        </div>
+
+        <div class="grid mt-4">
+            <div class="col-12">
+                <p-card header="Historial de Lecturas" styleClass="shadow-2">
+                    @if (historyLoading() && historyReadings().length === 0) {
+                        <p-skeleton height="250px" styleClass="mb-3" />
+                    } @else if (historyChartData()[0].series.length === 0) {
+                        <div class="flex flex-column align-items-center justify-content-center text-500 gap-2 py-5">
+                            <i class="pi pi-history text-4xl"></i>
+                            <span>Sin lecturas históricas</span>
+                        </div>
+                    } @else {
+                        <div class="chart-container">
+                            <ngx-charts-line-chart
+                                [results]="historyChartData()"
+                                [xAxis]="true"
+                                [yAxis]="true"
+                                [scheme]="colorScheme()"
+                            />
+                        </div>
+                        @if (historyCursor()) {
+                            <div class="text-center mt-3">
+                                <p-button label="Cargar más" [text]="true" (click)="loadMore()" [loading]="historyLoading()" />
+                            </div>
+                        }
+                    }
+                </p-card>
             </div>
         </div>
     } @else {
