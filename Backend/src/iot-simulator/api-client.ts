@@ -31,7 +31,8 @@ const DEVICE_PLAN: DevicePlan[] = [
 ];
 
 export class ApiClient {
-  private token: string = '';
+  private accessToken: string = '';
+  private refreshToken: string = '';
   private devices: RegisteredDevice[] = [];
 
   async login(): Promise<void> {
@@ -46,8 +47,28 @@ export class ApiClient {
     }
 
     const data = await res.json() as { tokens: AuthTokens };
-    this.token = data.tokens.accessToken;
+    this.accessToken = data.tokens.accessToken;
+    this.refreshToken = data.tokens.refreshToken;
     logger.info('Authenticated as admin');
+  }
+
+  private async refreshAuth(): Promise<void> {
+    const res = await fetch(`${simConfig.backendUrl}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: this.refreshToken }),
+    });
+
+    if (!res.ok) {
+      logger.error(`Token refresh failed: ${res.status} — re-authenticating`);
+      await this.login();
+      return;
+    }
+
+    const data = await res.json() as { accessToken: string; refreshToken: string };
+    this.accessToken = data.accessToken;
+    this.refreshToken = data.refreshToken;
+    logger.info('Token refreshed');
   }
 
   async registerDevices(): Promise<RegisteredDevice[]> {
@@ -99,15 +120,26 @@ export class ApiClient {
   }
 
   async publishBatch(readings: SimulatedReading[]): Promise<void> {
-    try {
+    const doPublish = async () => {
       const res = await fetch(`${simConfig.backendUrl}/api/v1/readings/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.token}`,
+          Authorization: `Bearer ${this.accessToken}`,
         },
         body: JSON.stringify({ readings }),
       });
+      return res;
+    };
+
+    try {
+      let res = await doPublish();
+
+      if (res.status === 401) {
+        logger.warn('Token expired, refreshing...');
+        await this.refreshAuth();
+        res = await doPublish();
+      }
 
       if (!res.ok) {
         const text = await res.text();
@@ -134,7 +166,7 @@ export class ApiClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
+        Authorization: `Bearer ${this.accessToken}`,
       },
       body: JSON.stringify(body),
     });

@@ -15,26 +15,43 @@ async function main() {
   simulator.setDevices(devices);
   logger.info(`Simulating ${simulator.getDevices().length} registered devices`);
 
-  const interval = setInterval(async () => {
-    simulator.simulateStatusChanges();
-    const readings = simulator.generateReadings();
-    logger.info(`Publishing ${readings.length} readings`);
+  const timers: ReturnType<typeof setInterval>[] = [];
+  const MIN_INTERVAL = 5000;
+  const MAX_INTERVAL = 10000;
 
-    if (simConfig.mqttMode === 'local') {
-      await api.publishBatch(readings);
-    } else {
-      logger.warn('MQTT mode not implemented yet');
-    }
-  }, simConfig.publishIntervalMs);
+  for (const device of simulator.getDevices()) {
+    const intervalMs = MIN_INTERVAL + Math.random() * (MAX_INTERVAL - MIN_INTERVAL);
+    const initialDelay = Math.random() * MAX_INTERVAL;
+
+    const startTimer = () => {
+      const timer = setInterval(async () => {
+        simulator.simulateStatusChanges();
+        const reading = simulator.generateDeviceReading(device.id);
+        if (!reading) return;
+
+        if (simConfig.mqttMode === 'local') {
+          await api.publishBatch([reading]);
+        } else {
+          logger.warn('MQTT mode not implemented yet');
+        }
+      }, intervalMs);
+
+      timers.push(timer);
+    };
+
+    setTimeout(startTimer, initialDelay);
+  }
+
+  logger.info(`Started ${simulator.getDevices().length} independent device timers`);
 
   process.on('SIGINT', () => {
-    clearInterval(interval);
+    timers.forEach(clearInterval);
     logger.info('Simulator stopped');
     process.exit(0);
   });
 
   process.on('SIGTERM', () => {
-    clearInterval(interval);
+    timers.forEach(clearInterval);
     logger.info('Simulator stopped');
     process.exit(0);
   });

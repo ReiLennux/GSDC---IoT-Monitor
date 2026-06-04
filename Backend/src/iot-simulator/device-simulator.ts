@@ -42,33 +42,40 @@ export class DeviceSimulator {
     return this.devices.map((d) => ({ id: d.id, type: d.type, status: d.online ? DeviceStatus.ONLINE : DeviceStatus.OFFLINE }));
   }
 
+  private generateSingleReading(device: { id: string; type: DeviceType; online: boolean }): SimulatedReading {
+    const config = sensorConfigs[device.type];
+    const now = new Date();
+
+    let value: number;
+    let quality: ReadingQuality;
+
+    if (!device.online) {
+      value = Math.round(((config.min + config.max) / 2) * 100) / 100;
+      quality = ReadingQuality.BAD;
+    } else if (Math.random() < this.anomalyProbability) {
+      value = config.criticalMax + Math.random() * 10;
+      quality = ReadingQuality.UNCERTAIN;
+    } else {
+      value = config.min + Math.random() * (config.max - config.min);
+      quality = ReadingQuality.GOOD;
+    }
+
+    return {
+      deviceId: device.id,
+      value: Math.round(value * 100) / 100,
+      unit: config.unit,
+      quality,
+      timestamp: now.toISOString(),
+    };
+  }
+
   generateReadings(): SimulatedReading[] {
-    return this.devices.map((device) => {
-      const config = sensorConfigs[device.type];
-      const now = new Date();
+    return this.devices.map((device) => this.generateSingleReading(device));
+  }
 
-      let value: number;
-      let quality: ReadingQuality;
-
-      if (!device.online) {
-        value = Math.round(((config.min + config.max) / 2) * 100) / 100;
-        quality = ReadingQuality.BAD;
-      } else if (Math.random() < this.anomalyProbability) {
-        value = config.criticalMax + Math.random() * 10;
-        quality = ReadingQuality.UNCERTAIN;
-      } else {
-        value = config.min + Math.random() * (config.max - config.min);
-        quality = ReadingQuality.GOOD;
-      }
-
-      return {
-        deviceId: device.id,
-        value: Math.round(value * 100) / 100,
-        unit: config.unit,
-        quality,
-        timestamp: now.toISOString(),
-      };
-    });
+  generateDeviceReading(deviceId: string): SimulatedReading | null {
+    const device = this.devices.find((d) => d.id === deviceId);
+    return device ? this.generateSingleReading(device) : null;
   }
 
   simulateStatusChanges() {
