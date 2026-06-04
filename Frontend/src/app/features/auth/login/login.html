@@ -1,0 +1,41 @@
+<div class="flex justify-content-center align-items-center h-screen bg-primary-reverse">
+  <p-card header="GSDC IoT Monitor" subheader="Ingrese sus credenciales" [style]="{ width: '450px' }">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-column gap-4">
+      
+      <div class="flex flex-column gap-2">
+        <label for="email" class="font-bold">Correo Electrónico</label>
+        <span class="p-input-icon-left">
+          <i class="pi pi-envelope"></i>
+          <input pInputText id="email" formControlName="email" placeholder="email@example.com" class="w-full" />
+        </span>
+      </div>
+
+      <div class="flex flex-column gap-2">
+        <label for="password" class="font-bold">Contraseña</label>
+        <span class="p-input-icon-left">
+          <i class="pi pi-lock"></i>
+          <input pInputText id="password" type="password" formControlName="password" class="w-full" />
+        </span>
+      </div>
+
+      @if (error) {
+        <p-message severity="error" [text]="error"></p-message>
+      }
+
+      <p-button label="Iniciar Sesión" 
+                type="submit" 
+                [loading]="loading" 
+                [disabled]="loginForm.invalid"
+                icon="pi pi-sign-in"
+                styleClass="w-full">
+      </p-button>
+
+    </form>
+    
+    <ng-template pTemplate="footer">
+      <div class="text-center text-500 text-sm">
+        Grupo Salinas DC - Plataforma de Monitoreo
+      </div>
+    </ng-template>
+  </p-card>
+</div>
