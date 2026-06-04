@@ -58,7 +58,8 @@ export const readingUseCases = new ReadingUseCases(
   deviceRepo,
   alertRepo,
   (deviceId, reading) => emitDeviceReading(deviceId, reading),
-  (alert) => emitAlertNew(alert)
+  (alert) => emitAlertNew(alert),
+  (deviceId, status) => emitDeviceStatus(deviceId, status),
 );
 
 export const dashboardUseCases = new DashboardUseCases(

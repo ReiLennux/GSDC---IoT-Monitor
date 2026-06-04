@@ -4,7 +4,7 @@ import { DeviceRepository } from '../../domain/repositories/device.repository';
 import { AlertRepository } from '../../domain/repositories/alert.repository';
 import { Reading } from '../../domain/entities/reading.entity';
 import { Alert } from '../../domain/entities/alert.entity';
-import { AlertSeverity, AlertType, ReadingQuality } from '../../domain/enums';
+import { AlertSeverity, AlertType, ReadingQuality, DeviceStatus } from '../../domain/enums';
 import { BaseUseCase } from './base.usecase';
 import { GetAllReadingsDto, AnalyticsDto, BatchReadingsDto } from '../dtos';
 import { logger } from '../../utils/logger';
@@ -21,6 +21,7 @@ export class ReadingUseCases extends BaseUseCase {
     private alertRepo: AlertRepository,
     private onReadingReceived: (deviceId: string, reading: unknown) => void,
     private onAlertCreated: (alert: Alert) => void,
+    private onDeviceStatusChanged?: (deviceId: string, status: DeviceStatus) => void,
   ) { super(); }
 
   async findAll(dto: GetAllReadingsDto) {
@@ -58,6 +59,13 @@ export class ReadingUseCases extends BaseUseCase {
       const severity = device.checkThresholds(reading.value);
       if (severity) {
         await this.createAlert(reading.deviceId, severity, reading.value);
+        if (severity === AlertSeverity.CRITICAL && device.status !== DeviceStatus.CRITICAL) {
+          await this.deviceRepo.updateStatus(reading.deviceId, DeviceStatus.CRITICAL);
+          this.onDeviceStatusChanged?.(reading.deviceId, DeviceStatus.CRITICAL);
+        }
+      } else if (device.status === DeviceStatus.CRITICAL) {
+        await this.deviceRepo.updateStatus(reading.deviceId, DeviceStatus.ONLINE);
+        this.onDeviceStatusChanged?.(reading.deviceId, DeviceStatus.ONLINE);
       }
     } catch (error) {
       logger.error('Error evaluating thresholds', error);

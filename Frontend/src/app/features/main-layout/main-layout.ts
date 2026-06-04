@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
@@ -7,7 +7,10 @@ import { MenubarModule } from 'primeng/menubar';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '../../core/auth';
 import { IoTService } from '../../core/iot.service';
+import { ThemeService } from '../../core/theme.service';
+import { DashboardStore } from '../../state/dashboard.store';
 import { CommonModule } from '@angular/common';
+import { BadgeModule } from 'primeng/badge';
 
 @Component({
   selector: 'app-main-layout',
@@ -15,10 +18,12 @@ import { CommonModule } from '@angular/common';
   imports: [
     CommonModule,
     RouterOutlet,
+    RouterLink,
     ButtonModule,
     AvatarModule,
     MenuModule,
-    MenubarModule
+    MenubarModule,
+    BadgeModule,
   ],
   templateUrl: './main-layout.html',
   styles: [`
@@ -58,31 +63,6 @@ import { CommonModule } from '@angular/common';
                 margin: 0 auto;
             }
         }
-
-        .layout-footer {
-            padding: 2rem 0;
-            background-color: var(--surface-0);
-            border-top: 1px solid var(--surface-border);
-            text-align: center;
-            color: var(--text-color-secondary);
-        }
-    }
-
-    @media screen and (max-width: 991px) {
-        .layout-wrapper {
-            .layout-header {
-                ::ng-deep .p-menubar {
-                    .p-menubar-root-list {
-                        flex: none;
-                        justify-content: flex-start;
-                    }
-                }
-            }
-
-            .layout-main {
-                padding: 1rem;
-            }
-        }
     }
   `]
 })
@@ -90,11 +70,12 @@ export class MainLayout implements OnInit {
   private authService = inject(AuthService);
   private iotService = inject(IoTService);
   private router = inject(Router);
+  themeService = inject(ThemeService);
+  readonly store = inject(DashboardStore);
 
   menuItems: MenuItem[] = [
     { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
     { label: 'Devices', icon: 'pi pi-database', routerLink: '/devices' },
-    { label: 'Alertas', icon: 'pi pi-bell', routerLink: '/alerts' },
     { label: 'Analytics', icon: 'pi pi-chart-line', routerLink: '/analytics' }
   ];
 
@@ -107,6 +88,10 @@ export class MainLayout implements OnInit {
 
   ngOnInit() {
     this.iotService.initializeData();
+  }
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
   }
 
   onLogout() {

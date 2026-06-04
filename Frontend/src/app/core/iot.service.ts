@@ -3,13 +3,15 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { DashboardStore } from '../state/dashboard.store';
-import { Device } from './models/device.model';
+import { Device, DeviceStatus } from './models/device.model';
 import { Alert } from './models/alert.model';
+import { AlertSoundService } from './alert-sound.service';
 
 @Injectable({ providedIn: 'root' })
 export class IoTService {
   private http = inject(HttpClient);
   private store = inject(DashboardStore);
+  private alertSound = inject(AlertSoundService);
   private socket!: Socket;
 
   initializeData() {
@@ -42,11 +44,14 @@ export class IoTService {
       this.store.updateDeviceReading(data.deviceId, data.reading);
     });
 
+    this.socket.on('device:status', (data: { deviceId: string; status: DeviceStatus }) => {
+      this.store.updateDeviceStatus(data.deviceId, data.status);
+    });
+
     this.socket.on('alert:new', (alert: Alert) => {
       this.store.addAlert(alert);
       if (alert.severity === 'critical' || alert.severity === 'emergency') {
-        const audio = new Audio('alert.mp3');
-        audio.play().catch(() => {});
+        this.alertSound.play();
       }
     });
   }

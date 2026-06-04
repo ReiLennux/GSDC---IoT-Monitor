@@ -1,6 +1,8 @@
 <div class="layout-wrapper">
-        <header class="layout-header shadow-1">
-        <p-menubar [model]="menuItems" styleClass="border-none border-noround bg-surface-0 px-4 py-3">
+    
+    <!-- Topbar (Flat & Horizontal Navigation) -->
+    <header class="layout-header shadow-1">
+        <p-menubar [model]="menuItems" styleClass="border-none border-noround bg-surface-card px-4 py-3">
             
             <ng-template pTemplate="start">
                 <a routerLink="/" class="flex align-items-center no-underline mr-4">
@@ -11,9 +13,23 @@
 
             <ng-template pTemplate="end">
                 <div class="flex align-items-center gap-2">
-                    <button pButton icon="pi pi-bell" class="p-button-rounded p-button-text p-button-secondary"></button>
+                    <button pButton [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'" 
+                            class="p-button-rounded p-button-text p-button-secondary"
+                            (click)="toggleTheme()"></button>
                     
-                    <div class="flex align-items-center cursor-pointer p-2 border-round hover:surface-hover" (click)="userMenu.toggle($event)">
+                    <a routerLink="/alerts" class="relative inline-flex no-underline">
+                        <button pButton icon="pi pi-bell" class="p-button-rounded p-button-text p-button-secondary" type="button"></button>
+                        @if (store.activeAlerts() > 0) {
+                            <p-badge [value]="store.activeAlerts()" severity="danger" styleClass="absolute" style="top: -2px; right: -2px" />
+                        }
+                    </a>
+                    
+                    <div class="flex align-items-center cursor-pointer p-2 border-round transition-colors duration-200" 
+                         style="background-color: transparent;"
+                         #menuContainer
+                         (mouseenter)="menuContainer.style.backgroundColor = 'var(--surface-hover)'"
+                         (mouseleave)="menuContainer.style.backgroundColor = 'transparent'"
+                         (click)="userMenu.toggle($event)">
                         <p-avatar icon="pi pi-user" shape="circle" styleClass="bg-primary-50 text-primary font-bold"></p-avatar>
                         <i class="pi pi-angle-down ml-2 text-400"></i>
                     </div>
@@ -24,14 +40,11 @@
         </p-menubar>
     </header>
 
+    <!-- Main Content Area -->
     <main class="layout-main">
         <div class="content-container">
             <router-outlet></router-outlet>
         </div>
     </main>
-
-    <footer class="layout-footer py-4 border-top-1 border-200 text-center text-500 bg-surface-0">
-        &copy; 2026 GSDC - Platform Monitoring
-    </footer>
 
 </div>
