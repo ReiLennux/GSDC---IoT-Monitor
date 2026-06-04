@@ -18,3 +18,20 @@ body {
     background-color: var(--surface-ground);
     color: var(--text-color);
 }
+
+/* Fix for ngx-charts text in dark mode */
+.my-app-dark {
+    .ngx-charts {
+        text {
+            fill: var(--text-color);
+        }
+    }
+}
+
+/* Fix for heatmap rack cards */
+.rack-card {
+    background-color: var(--surface-card);
+    &:hover {
+        background-color: var(--surface-hover);
+    }
+}

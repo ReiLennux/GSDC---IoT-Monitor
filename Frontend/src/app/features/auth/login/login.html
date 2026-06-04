@@ -4,18 +4,18 @@
       
       <div class="flex flex-column gap-2">
         <label for="email" class="font-bold">Correo Electrónico</label>
-        <span class="p-input-icon-left">
-          <i class="pi pi-envelope"></i>
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-envelope"></p-inputIcon>
           <input pInputText id="email" formControlName="email" placeholder="email@example.com" class="w-full" />
-        </span>
+        </p-iconField>
       </div>
 
       <div class="flex flex-column gap-2">
         <label for="password" class="font-bold">Contraseña</label>
-        <span class="p-input-icon-left">
-          <i class="pi pi-lock"></i>
+        <p-iconField iconPosition="left">
+          <p-inputIcon styleClass="pi pi-lock"></p-inputIcon>
           <input pInputText id="password" type="password" formControlName="password" class="w-full" />
-        </span>
+        </p-iconField>
       </div>
 
       @if (error) {

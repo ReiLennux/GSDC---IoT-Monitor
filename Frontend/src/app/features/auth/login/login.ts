@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputIconModule } from 'primeng/inputicon';
+import { IconFieldModule } from 'primeng/iconfield';
 import { CardModule } from 'primeng/card';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../../core/auth';
@@ -14,6 +16,8 @@ import { AuthService } from '../../../core/auth';
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    InputIconModule,
+    IconFieldModule,
     CardModule,
     MessageModule
   ],
