@@ -67,17 +67,25 @@ export abstract class DynamoRepository<T> implements BaseRepository<T> {
         }));
     }
 
-    protected async _query(pk: string, options?: QueryOptions & { skBeginsWith?: string }): Promise<PaginationResult<T>> {
+    protected async _query(pk: string, options?: QueryOptions & { skBeginsWith?: string, skEquals?: string }): Promise<PaginationResult<T>> {
         const exprAttrValues: Record<string, unknown> = { ':pk': pk };
+        
+        let KeyConditionExpression = 'PK = :pk';
+        const ExpressionAttributeValues: Record<string, unknown> = { ...exprAttrValues };
+        const ExpressionAttributeNames: Record<string, string> = {};
+
+        if (options?.skBeginsWith) {
+            KeyConditionExpression += ' AND begins_with(SK, :sk)';
+            ExpressionAttributeValues[':sk'] = options.skBeginsWith;
+        } else if (options?.skEquals) {
+            KeyConditionExpression += ' AND SK = :sk';
+            ExpressionAttributeValues[':sk'] = options.skEquals;
+        }
 
         const params: QueryCommandInput = {
             TableName: env.dynamodbTableName,
-            KeyConditionExpression: options?.skBeginsWith
-                ? 'PK = :pk AND begins_with(SK, :sk)'
-                : 'PK = :pk',
-            ExpressionAttributeValues: options?.skBeginsWith
-                ? { ...exprAttrValues, ':sk': options.skBeginsWith }
-                : exprAttrValues,
+            KeyConditionExpression,
+            ExpressionAttributeValues,
             Limit: options?.limit ?? 20,
         };
 

@@ -43,7 +43,12 @@ export class DeviceUseCases extends BaseUseCase {
   }
 
   async list(dto: ListDevicesDto) {
-    return this.deviceRepo.query({ limit: dto.limit ?? 500, cursor: dto.cursor });
+    return this.deviceRepo.query({ 
+        limit: dto.limit ?? 500, 
+        cursor: dto.cursor,
+        sortField: dto.sortField,
+        sortOrder: dto.sortOrder 
+    });
   }
 
   async getById(dto: GetDeviceDto): Promise<Device> {

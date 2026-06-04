@@ -4,10 +4,20 @@ import { DeviceUseCases } from '../../application/usecases';
 export class DeviceController {
   constructor(private uc: DeviceUseCases) {}
 
-  findAll = async (_req: Request, res: Response, next: NextFunction) => {
+  findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.uc.list({});
-      res.json(result);
+      const { limit, cursor, sortField, sortOrder } = req.query;
+      const result = await this.uc.list({
+        limit: Number(limit) || 10,
+        cursor: cursor as string,
+        sortField: sortField as string,
+        sortOrder: Number(sortOrder)
+      });
+      res.json({
+          data: result.data,
+          nextCursor: result.nextCursor,
+          total: result.total || result.data.length
+      });
     } catch (err) { next(err); }
   };
 
@@ -27,7 +37,8 @@ export class DeviceController {
 
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const device = await this.uc.update({ id: req.params.id as string, ...req.body });
+      const dto = { ...req.body, id: req.params.id };
+      const device = await this.uc.update(dto);
       res.json(device);
     } catch (err) { next(err); }
   };

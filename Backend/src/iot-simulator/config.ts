@@ -6,7 +6,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 export const simConfig = {
   mqttMode: (process.env.MQTT_MODE || 'local') as 'local' | 'aws',
   publishIntervalMs: parseInt(process.env.PUBLISH_INTERVAL_MS || '5000', 10),
-  activeDevices: parseInt(process.env.ACTIVE_DEVICES || '500', 10),
+  activeDevices: parseInt(process.env.ACTIVE_DEVICES || '20', 10),
   anomalyProbability: parseFloat(process.env.ANOMALY_PROBABILITY || '0.05'),
   mqttTopicPrefix: process.env.MQTT_TOPIC_PREFIX || 'dt/devices',
   iotEndpoint: process.env.IOT_ENDPOINT || '',

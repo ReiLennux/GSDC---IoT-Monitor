@@ -37,7 +37,56 @@ export class DeviceDynamoRepository
     }
 
     async query(options?: QueryOptions): Promise<PaginationResult<Device>> {
-        return this._query('DEVICE#', { ...options, skBeginsWith: 'METADATA' });
+        const result = await docClient.send(new ScanCommand({
+            TableName: env.dynamodbTableName,
+            FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
+            ExpressionAttributeValues: { 
+                ':prefix': 'DEVICE#',
+                ':sk': 'METADATA'
+            },
+        }));
+        
+        let items = (result.Items || []).map(item => this.fromPersistence(item));
+
+        if (options?.sortField) {
+            const field = options.sortField;
+            const order = options.sortOrder === 1 ? 1 : -1;
+            items.sort((a, b) => {
+                const valA = this.getSortValue(a, field);
+                const valB = this.getSortValue(b, field);
+                if (valA == null && valB == null) return 0;
+                if (valA == null) return -order;
+                if (valB == null) return order;
+                if (valA < valB) return -order;
+                if (valA > valB) return order;
+                return 0;
+            });
+        }
+
+        const total = items.length;
+        const limit = options?.limit ?? 10;
+        const start = options?.cursor ? parseInt(options.cursor, 10) : 0;
+        const offset = Number.isFinite(start) && start > 0 ? start : 0;
+        const page = items.slice(offset, offset + limit);
+        const nextOffset = offset + limit;
+        const nextCursor = nextOffset < total ? String(nextOffset) : null;
+
+        return {
+            data: page,
+            nextCursor,
+            total,
+        };
+    }
+
+    private getSortValue(item: Device, field: string): string | number | undefined {
+        const value = field.split('.').reduce<unknown>((acc, key) => {
+            if (acc != null && typeof acc === 'object') {
+                return (acc as Record<string, unknown>)[key];
+            }
+            return undefined;
+        }, item);
+        if (typeof value === 'string' || typeof value === 'number') return value;
+        return undefined;
     }
 
     async findByStatus(status: DeviceStatus): Promise<Device[]> {

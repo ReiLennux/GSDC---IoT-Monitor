@@ -56,6 +56,8 @@ export class DeleteDeviceDto {
 export class ListDevicesDto {
   @IsOptional() @IsNumber() limit?: number;
   @IsOptional() @IsString() cursor?: string;
+  @IsOptional() @IsString() sortField?: string;
+  @IsOptional() @IsNumber() sortOrder?: number;
 }
 
 export class GetDeviceDto {

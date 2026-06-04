@@ -15,12 +15,15 @@ interface DeviceConfig {
   criticalMax: number;
 }
 
+// Los rangos normales (min–max) deben mantenerse dentro de los umbrales seguros
+// para que solo el 5% de anomalías dispare alertas (según PRUEBA_TECNICA.md).
+// criticalMax se alinea con el threshold crítico del dispositivo registrado en DEVICE_PLAN.
 const sensorConfigs: Record<DeviceType, DeviceConfig> = {
-  [DeviceType.TEMPERATURE]: { unit: '°C', min: 18, max: 45, criticalMax: 35 },
-  [DeviceType.HUMIDITY]: { unit: '%', min: 20, max: 80, criticalMax: 70 },
-  [DeviceType.POWER]: { unit: 'kW', min: 0, max: 100, criticalMax: 85 },
-  [DeviceType.UPS]: { unit: '%', min: 0, max: 100, criticalMax: 80 },
-  [DeviceType.COOLING]: { unit: 'L/min', min: 10, max: 150, criticalMax: 120 },
+  [DeviceType.TEMPERATURE]: { unit: '°C', min: 22, max: 32, criticalMax: 40 },
+  [DeviceType.HUMIDITY]: { unit: '%', min: 30, max: 65, criticalMax: 80 },
+  [DeviceType.POWER]: { unit: 'kW', min: 10, max: 75, criticalMax: 95 },
+  [DeviceType.UPS]: { unit: '%', min: 25, max: 75, criticalMax: 80 },
+  [DeviceType.COOLING]: { unit: 'L/min', min: 20, max: 110, criticalMax: 130 },
 };
 
 export class DeviceSimulator {
@@ -48,7 +51,7 @@ export class DeviceSimulator {
       let quality: ReadingQuality;
 
       if (!device.online) {
-        value = 0;
+        value = Math.round(((config.min + config.max) / 2) * 100) / 100;
         quality = ReadingQuality.BAD;
       } else if (Math.random() < this.anomalyProbability) {
         value = config.criticalMax + Math.random() * 10;
