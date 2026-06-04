@@ -1,0 +1,104 @@
+<p-card styleClass="shadow-2 rack-map-card">
+  <ng-template pTemplate="header">
+    <div class="rack-map-card__header flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-2 px-3 pt-3 pb-0">
+      <span class="font-semibold text-lg m-0">{{ headerTitle() }}</span>
+      @if (showFilter() && rackFilterOptions().length > 0) {
+        <p-select
+          [options]="rackFilterOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Filtrar por rack"
+          styleClass="w-full sm:w-14rem"
+          [ngModel]="rackFilter()"
+          (ngModelChange)="onFilterChange($event)"
+        />
+      }
+    </div>
+  </ng-template>
+
+  @if (loading()) {
+    <p-skeleton height="4rem" styleClass="mb-3" />
+    <p-skeleton height="12rem" />
+  } @else if (isDetailView() && rackSummary(); as summary) {
+    <div class="rack-detail">
+      <div class="rack-summary flex flex-wrap align-items-center gap-2 mb-3 p-3 surface-100 border-round border-1 surface-border">
+        <p-tag [value]="summary.deviceCount + ' dispositivos'" severity="info" [rounded]="true" />
+        <p-tag [value]="countByStatus(summary, 'online') + ' online'" severity="success" [rounded]="true" />
+        <p-tag [value]="countByStatus(summary, 'critical') + ' críticos'" severity="danger" [rounded]="true" />
+        <p-tag [value]="countByStatus(summary, 'offline') + ' offline'" severity="secondary" [rounded]="true" />
+        <p-tag [value]="countByStatus(summary, 'maintenance') + ' mant.'" severity="warn" [rounded]="true" />
+      </div>
+
+      <p-table
+        [value]="summary.devices"
+        [rows]="10"
+        [paginator]="summary.devices.length > 10"
+        responsiveLayout="stack"
+        [breakpoint]="'960px'"
+        [rowHover]="true"
+        dataKey="deviceId"
+        styleClass="p-datatable-sm"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Nombre</th>
+            <th class="hidden md:table-cell">ID</th>
+            <th>Tipo</th>
+            <th>Posición</th>
+            <th>Estado</th>
+            <th>Umbrales</th>
+            <th class="hidden sm:table-cell">Última lectura</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-device>
+          <tr>
+            <td><span class="font-medium text-900">{{ device.name }}</span></td>
+            <td class="hidden md:table-cell">
+              <small class="text-600">{{ device.deviceId }}</small>
+            </td>
+            <td>{{ device.type }}</td>
+            <td>
+              {{ device.location?.position }}
+              <span class="text-500 text-sm">· Piso {{ device.location?.floor }}</span>
+            </td>
+            <td>
+              <p-tag [value]="device.status" [severity]="getSeverity(device.status)" [rounded]="true" />
+            </td>
+            <td>
+              <span class="text-sm text-600">
+                {{ device.thresholds?.min }} – {{ device.thresholds?.max }}
+                <span class="text-500">(crít. {{ device.thresholds?.criticalMin }}–{{ device.thresholds?.criticalMax }})</span>
+              </span>
+            </td>
+            <td class="hidden sm:table-cell">
+              @if (device.lastReading) {
+                <span class="text-primary font-bold">{{ device.lastReading.value }}</span>
+                <span class="text-500 text-xs ml-1">{{ device.lastReading.unit }}</span>
+              } @else {
+                <span class="text-400 italic">Sin datos</span>
+              }
+            </td>
+            <td class="text-right">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true"
+                severity="secondary"
+                [text]="true"
+                size="small"
+                [routerLink]="['/devices', device.deviceId]"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="text-center text-500 py-4">Este rack no tiene dispositivos registrados.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  } @else {
+    <app-rack-heatmap [racks]="racks()" [showLegend]="showLegend()" />
+  }
+</p-card>

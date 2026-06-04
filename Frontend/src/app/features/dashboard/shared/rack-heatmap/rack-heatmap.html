@@ -1,0 +1,35 @@
+@if (showLegend()) {
+  <div class="status-legend flex flex-wrap gap-3 mb-3 pb-2 border-bottom-1 surface-border">
+    @for (item of statusLegend; track item.status) {
+      <div class="flex align-items-center gap-2 text-xs text-600">
+        <span class="state-dot border-round" [ngClass]="item.class"></span>
+        <span>{{ item.label }}</span>
+      </div>
+    }
+  </div>
+}
+
+@if (racks().length === 0) {
+  <div class="text-center text-500 text-sm py-4">No hay racks con dispositivos cargados.</div>
+} @else {
+  <div class="rack-grid">
+    @for (rack of racks(); track rack.id) {
+      <div class="rack-card p-2 border-round border-1 surface-border surface-ground transition-all shadow-sm">
+        <div class="rack-card__title text-xs font-bold text-600 mb-2 border-bottom-1 surface-border pb-1 text-center">
+          Rack {{ rack.id }}
+        </div>
+        <div class="rack-card__devices">
+          @for (device of rack.devices; track device.deviceId) {
+            <a
+              [routerLink]="['/devices', device.deviceId]"
+              class="state-dot border-round no-underline"
+              [ngClass]="getDeviceStatusClass(device.status)"
+              [pTooltip]="device.name + ' — ' + device.status"
+              tooltipPosition="top"
+            ></a>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
