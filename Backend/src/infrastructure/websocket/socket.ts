@@ -77,7 +77,7 @@ export function getIO(): Server {
 }
 
 export function emitDeviceReading(deviceId: string, reading: unknown): void {
-  getIO().to(`device:${deviceId}`).emit('device:reading', { deviceId, reading });
+  getIO().emit('device:reading', { deviceId, reading });
   getIO().emit('dashboard:update', { type: 'reading', deviceId });
 }
 

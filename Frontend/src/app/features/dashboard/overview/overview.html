@@ -1,0 +1,183 @@
+<div class="grid p-3">
+  <div class="col-12 dashboard-header pb-3 mb-1">
+    <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-2">
+      <div>
+        <h2 class="m-0 text-2xl font-bold text-900">Dashboard IoT</h2>
+        <span class="text-sm text-500">{{ lastUpdatedLabel() }}</span>
+      </div>
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="col-12 sm:col-6 lg:col-3">
+        <p-skeleton height="6rem" styleClass="mb-2" />
+      </div>
+    }
+    <div class="col-12 xl:col-8">
+      <p-skeleton height="24rem" />
+    </div>
+    <div class="col-12 xl:col-4">
+      <p-skeleton height="16rem" />
+    </div>
+    <div class="col-12">
+      <p-skeleton height="10rem" styleClass="mt-3" />
+    </div>
+  } @else {
+    <div class="col-12 sm:col-6 lg:col-3">
+      <a routerLink="/devices" class="no-underline kpi-card block h-full">
+        <p-card styleClass="h-full shadow-2 border-left-3 border-blue-500 surface-card">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Total Dispositivos</span>
+              <div class="text-900 font-bold text-3xl">{{ store.totalDevices() }}</div>
+            </div>
+            <div class="border-round surface-100 p-3 flex align-items-center justify-content-center" style="width: 3rem; height: 3rem">
+              <i class="pi pi-database text-blue-500 text-2xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </a>
+    </div>
+
+    <div class="col-12 sm:col-6 lg:col-3">
+      <a [routerLink]="['/devices']" [queryParams]="{ status: 'online' }" class="no-underline kpi-card block h-full">
+        <p-card styleClass="h-full shadow-2 border-left-3 border-green-500 surface-card">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Equipos Online</span>
+              <div class="text-green-600 font-bold text-3xl">{{ store.onlineCount() }}</div>
+              <span class="text-sm text-500">{{ store.onlinePercent() }}% del total</span>
+            </div>
+            <div class="border-round surface-100 p-3 flex align-items-center justify-content-center" style="width: 3rem; height: 3rem">
+              <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </a>
+    </div>
+
+    <div class="col-12 sm:col-6 lg:col-3">
+      <a [routerLink]="['/devices']" [queryParams]="{ status: 'critical' }" class="no-underline kpi-card block h-full">
+        <p-card styleClass="h-full shadow-2 border-left-3 border-red-500 surface-card">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Estados Críticos</span>
+              <div class="text-red-600 font-bold text-3xl">{{ store.criticalCount() }}</div>
+              <span class="text-sm text-500">{{ store.offlineCount() }} offline · {{ store.maintenanceCount() }} mant.</span>
+            </div>
+            <div class="border-round surface-100 p-3 flex align-items-center justify-content-center" style="width: 3rem; height: 3rem">
+              <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </a>
+    </div>
+
+    <div class="col-12 sm:col-6 lg:col-3">
+      <a routerLink="/alerts" class="no-underline kpi-card block h-full">
+        <p-card styleClass="h-full shadow-2 border-left-3 border-orange-500 surface-card">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-semibold mb-2 uppercase text-xs tracking-wider">Alertas Activas</span>
+              <div class="text-orange-600 font-bold text-3xl">{{ store.activeAlerts() }}</div>
+              <div class="text-sm text-500 mt-1">
+                @if (store.avgTemperature() !== null) {
+                  <span>Temp. media: {{ store.avgTemperature() }}°C</span>
+                }
+                @if (store.avgTemperature() !== null && store.avgHumidity() !== null) {
+                  <span> · </span>
+                }
+                @if (store.avgHumidity() !== null) {
+                  <span>Humedad media: {{ store.avgHumidity() }}%</span>
+                }
+              </div>
+            </div>
+            <div class="border-round surface-100 p-3 flex align-items-center justify-content-center" style="width: 3rem; height: 3rem">
+              <i class="pi pi-bell text-orange-500 text-2xl"></i>
+            </div>
+          </div>
+        </p-card>
+      </a>
+    </div>
+
+    <!-- Chart -->
+    <div class="col-12 xl:col-8 match-height">
+      <p-card styleClass="shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div class="flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-2 px-3 pt-3">
+            <span class="font-semibold text-lg">Streaming de lecturas</span>
+          </div>
+        </ng-template>
+
+        @if (chartData().length === 0) {
+          <div class="chart-empty flex flex-column align-items-center justify-content-center text-500 gap-2">
+            <i class="pi pi-chart-line text-4xl"></i>
+            <span>Esperando lecturas en vivo de temperatura y humedad…</span>
+          </div>
+        } @else {
+          <div class="chart-container">
+            <ngx-charts-line-chart
+              [results]="chartData()"
+              [xAxis]="true"
+              [yAxis]="true"
+              [legend]="true"
+              [scheme]="colorScheme()"
+              [animations]="false"
+              [timeline]="true"
+            />
+          </div>
+        }
+      </p-card>
+    </div>
+
+    <!-- Alertas -->
+    <div class="col-12 xl:col-4">
+      <p-card styleClass="shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div class="flex justify-content-between align-items-center px-3 pt-3 pb-1">
+            <span class="font-semibold text-lg">Alertas recientes</span>
+            <a routerLink="/alerts" class="text-sm text-primary no-underline font-medium">Ver todas</a>
+          </div>
+        </ng-template>
+
+        @if (store.recentAlerts().length === 0) {
+          <div class="text-center text-500 text-sm py-5 px-3">No hay alertas registradas.</div>
+        } @else {
+          <div class="alerts-scroll">
+            @for (alert of store.recentAlerts(); track alert) {
+              <div class="flex flex-column py-2 px-3 border-bottom-1 surface-border alert-item gap-1" [ngClass]="{'alert-pending': !alert.acknowledged, 'alert-acknowledged': alert.acknowledged}">
+                <div class="flex align-items-center justify-content-between gap-2">
+                  <div class="flex align-items-center gap-2 overflow-hidden">
+                    <i class="pi pi-circle-fill text-xs" [ngClass]="getAlertSeverityColor(alert.severity)"></i>
+                    <span class="text-sm font-medium white-space-nowrap overflow-hidden text-overflow-ellipsis" [ngClass]="{'text-800': !alert.acknowledged, 'text-500': alert.acknowledged}">
+                      {{ alert.message }}
+                    </span>
+                  </div>
+                  <p-tag [severity]="getSeverityTag(alert.severity)" [value]="alert.severity | uppercase" styleClass="text-xs" />
+                </div>
+                <div class="flex justify-content-between text-xs text-500 pl-3">
+                  <span>{{ getDeviceName(alert.deviceId) }} — <a [routerLink]="['/devices', alert.deviceId]" class="text-primary no-underline font-medium">Ver detalles →</a></span>
+                  <span>{{ formatAlertTime(alert.createdAt) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </p-card>
+    </div>
+
+    <!-- Mapa de racks -->
+    <div class="col-12">
+      <app-rack-map-card
+        [racks]="store.racks()"
+        [loading]="rackLoading()"
+        [rackSummary]="rackSummary()"
+        [showFilter]="true"
+        [rackFilterOptions]="rackFilterOptions()"
+        [rackFilter]="rackFilter()"
+        (rackFilterChange)="onRackFilterChange($event)"
+      />
+    </div>
+  }
+</div>

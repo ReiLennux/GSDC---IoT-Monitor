@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { forkJoin, retry, timer } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { DashboardStore } from '../state/dashboard.store';
 import { Device, DeviceStatus } from './models/device.model';
@@ -19,8 +19,8 @@ export class IoTService {
 
     const devices$ = this.http.get<{ data: Device[]; total?: number }>('/api/v1/devices', {
       params: new HttpParams().set('limit', '500'),
-    });
-    const alerts$ = this.http.get<{ data: Alert[] }>('/api/v1/alerts');
+    }).pipe(retry({ count: 10, delay: (_, retryCount) => timer(500 * 2 ** retryCount) }));
+    const alerts$ = this.http.get<{ data: Alert[] }>('/api/v1/alerts').pipe(retry({ count: 10, delay: (_, retryCount) => timer(500 * 2 ** retryCount) }));
 
     forkJoin({ devices: devices$, alerts: alerts$ }).subscribe({
       next: ({ devices, alerts }) => {
