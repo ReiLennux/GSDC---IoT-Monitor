@@ -1,0 +1,69 @@
+<div class="p-card p-4 surface-card border-round shadow-1">
+    <div class="flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 text-2xl font-bold text-900">Detalles del Dispositivo</h2>
+        <p-button label="Regresar" icon="pi pi-arrow-left" [text]="true" routerLink="/devices"></p-button>
+    </div>
+
+    @if (loading()) {
+        <div class="text-center p-5"><i class="pi pi-spin pi-spinner text-4xl"></i></div>
+    } @else if (device()) {
+        <div class="grid">
+            <div class="col-12 md:col-6 lg:col-4">
+                <p-panel header="Información" styleClass="h-full">
+                    <div class="flex flex-column gap-2">
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Nombre:</span>
+                            <span>{{ device()!.name }}</span>
+                        </div>
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Estado:</span>
+                            <p-tag [value]="device()!.status" [severity]="getSeverity(device()!.status)"></p-tag>
+                        </div>
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Tipo:</span>
+                            <span>{{ device()!.type }}</span>
+                        </div>
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Rack/Pos:</span>
+                            <span>{{ device()!.location?.rack }} / {{ device()!.location?.position }}</span>
+                        </div>
+                    </div>
+                </p-panel>
+            </div>
+            <div class="col-12 md:col-6 lg:col-4">
+                <p-panel header="Metadatos" styleClass="h-full">
+                    <div class="flex flex-column gap-2">
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Fabricante:</span>
+                            <span>{{ device()!.metadata?.manufacturer }}</span>
+                        </div>
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Modelo:</span>
+                            <span>{{ device()!.metadata?.model }}</span>
+                        </div>
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Firmware:</span>
+                            <span>{{ device()!.metadata?.firmwareVersion }}</span>
+                        </div>
+                    </div>
+                </p-panel>
+            </div>
+            <div class="col-12 lg:col-4">
+                <p-panel header="Umbrales" styleClass="h-full">
+                    <div class="flex flex-column gap-2">
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Rango:</span>
+                            <span>{{ device()!.thresholds?.min }} - {{ device()!.thresholds?.max }}</span>
+                        </div>
+                        <div class="flex justify-content-between">
+                            <span class="font-bold text-700">Critico:</span>
+                            <span>{{ device()!.thresholds?.criticalMin }} - {{ device()!.thresholds?.criticalMax }}</span>
+                        </div>
+                    </div>
+                </p-panel>
+            </div>
+        </div>
+    } @else {
+        <div class="text-center p-5 text-red-500 font-bold">Dispositivo no encontrado</div>
+    }
+</div>

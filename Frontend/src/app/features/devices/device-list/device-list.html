@@ -1,0 +1,93 @@
+<div class="card shadow-1 p-2 md:p-4 surface-card border-round">
+    <p-toast></p-toast>
+    <p-confirmDialog></p-confirmDialog>
+    <p-table 
+        #dt 
+        [value]="store.devices()" 
+        [paginator]="true" 
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [totalRecords]="store.totalRecords()"
+        [lazy]="true"
+        (onLazyLoad)="loadDevicesLazy($event)"
+        [globalFilterFields]="['name', 'deviceId', 'type', 'location.rack']"
+        responsiveLayout="stack"
+        [breakpoint]="'960px'"
+        [rowHover]="true" 
+        dataKey="deviceId"
+        currentPageReportTemplate="Mostrando del {first} al {last} de {totalRecords} dispositivos" 
+        [showCurrentPageReport]="true">
+        
+        <ng-template pTemplate="caption">
+            <div class="flex flex-column sm:flex-row justify-content-between align-items-center gap-3 py-2">
+                <h5 class="m-0 text-xl font-semibold text-900">Gestión de Dispositivos</h5>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <p-iconField iconPosition="left" class="flex-grow-1">
+                        <p-inputIcon styleClass="pi pi-search"></p-inputIcon>
+                        <input pInputText type="text" [formControl]="searchControl" placeholder="Buscar dispositivos..." class="w-full p-inputtext-sm" />
+                    </p-iconField>
+                    <p-button label="Nuevo" icon="pi pi-plus" size="small" severity="success" (onClick)="openNew()" *hasRole="['admin']"></p-button>
+                </div>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="name" class="white-space-nowrap">Nombre <p-sortIcon field="name"></p-sortIcon></th>
+                <th pSortableColumn="deviceId" class="hidden md:table-cell white-space-nowrap">ID <p-sortIcon field="deviceId"></p-sortIcon></th>
+                <th pSortableColumn="type" class="white-space-nowrap">Tipo <p-sortIcon field="type"></p-sortIcon></th>
+                <th pSortableColumn="metadata.model" class="hidden lg:table-cell white-space-nowrap">Modelo <p-sortIcon field="metadata.model"></p-sortIcon></th>
+                <th pSortableColumn="location.rack" class="hidden sm:table-cell white-space-nowrap">Rack <p-sortIcon field="location.rack"></p-sortIcon></th>
+                <th class="hidden md:table-cell white-space-nowrap">Posición</th>
+                <th pSortableColumn="status" class="white-space-nowrap">Estado <p-sortIcon field="status"></p-sortIcon></th>
+                <th class="hidden sm:table-cell white-space-nowrap">Última Lectura</th>
+                <th class="text-right white-space-nowrap">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-device>
+            <tr>
+                <td><span class="font-medium text-900">{{ device.name }}</span></td>
+                <td class="hidden md:table-cell"><small class="text-600 font-family-monospace">{{ device.deviceId }}</small></td>
+                <td>{{ device.type }}</td>
+                <td class="hidden lg:table-cell">{{ device.metadata?.model || 'N/A' }}</td>
+                <td class="hidden sm:table-cell"><p-tag [value]="device.location?.rack" severity="secondary"></p-tag></td>
+                <td class="hidden md:table-cell">{{ device.location?.position }} (Piso {{ device.location?.floor }})</td>
+                <td><p-tag [value]="device.status" [severity]="getSeverity(device.status)" [rounded]="true"></p-tag></td>
+                <td class="hidden sm:table-cell">
+                    @if (device.lastReading) {
+                        <span class="text-primary font-bold">{{ device.lastReading.value }}</span>
+                        <span class="text-500 text-xs ml-1">{{ device.lastReading.unit }}</span>
+                    } @else {
+                        <span class="text-400 italic">Sin datos</span>
+                    }
+                </td>
+                <td class="text-right">
+                    <div class="flex gap-1 justify-content-end">
+                        <p-button icon="pi pi-eye" [rounded]="true" severity="secondary" [text]="true" size="small" [routerLink]="['/devices', device.deviceId]"></p-button>
+                        <p-button icon="pi pi-pencil" [rounded]="true" severity="info" [text]="true" size="small" (onClick)="editDevice(device)"></p-button>
+                        <p-button icon="pi pi-trash" [rounded]="true" severity="danger" [text]="true" size="small" (onClick)="deleteDevice(device)"></p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="9" class="text-center p-5">
+                    <div class="flex flex-column align-items-center gap-3">
+                        <i class="pi pi-database text-5xl text-400"></i>
+                        <span class="text-xl font-medium text-700">No hay dispositivos registrados</span>
+                        <p-button label="Registrar el primero" icon="pi pi-plus" (onClick)="openNew()" styleClass="p-button-text"></p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<app-device-form 
+    [(visible)]="deviceDialog" 
+    [device]="editingDevice()" 
+    (saveDevice)="onSaveDevice($event)">
+</app-device-form>
