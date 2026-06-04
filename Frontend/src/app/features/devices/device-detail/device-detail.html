@@ -25,7 +25,7 @@
                         </div>
                         <div class="flex justify-content-between">
                             <span class="font-bold text-700">Rack/Pos:</span>
-                            <span>{{ device()!.location?.rack }} / {{ device()!.location?.position }}</span>
+                            <span>{{ device()!.location.rack }} / {{ device()!.location.position }}</span>
                         </div>
                     </div>
                 </p-panel>
@@ -35,15 +35,15 @@
                     <div class="flex flex-column gap-2">
                         <div class="flex justify-content-between">
                             <span class="font-bold text-700">Fabricante:</span>
-                            <span>{{ device()!.metadata?.manufacturer }}</span>
+                            <span>{{ device()!.metadata.manufacturer }}</span>
                         </div>
                         <div class="flex justify-content-between">
                             <span class="font-bold text-700">Modelo:</span>
-                            <span>{{ device()!.metadata?.model }}</span>
+                            <span>{{ device()!.metadata.model }}</span>
                         </div>
                         <div class="flex justify-content-between">
                             <span class="font-bold text-700">Firmware:</span>
-                            <span>{{ device()!.metadata?.firmwareVersion }}</span>
+                            <span>{{ device()!.metadata.firmwareVersion }}</span>
                         </div>
                     </div>
                 </p-panel>
@@ -53,11 +53,11 @@
                     <div class="flex flex-column gap-2">
                         <div class="flex justify-content-between">
                             <span class="font-bold text-700">Rango:</span>
-                            <span>{{ device()!.thresholds?.min }} - {{ device()!.thresholds?.max }}</span>
+                            <span>{{ device()!.thresholds.min }} - {{ device()!.thresholds.max }}</span>
                         </div>
                         <div class="flex justify-content-between">
                             <span class="font-bold text-700">Critico:</span>
-                            <span>{{ device()!.thresholds?.criticalMin }} - {{ device()!.thresholds?.criticalMax }}</span>
+                            <span>{{ device()!.thresholds.criticalMin }} - {{ device()!.thresholds.criticalMax }}</span>
                         </div>
                     </div>
                 </p-panel>

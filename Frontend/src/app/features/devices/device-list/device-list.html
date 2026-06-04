@@ -3,14 +3,15 @@
     <p-confirmDialog></p-confirmDialog>
     <p-table 
         #dt 
-        [value]="store.devices()" 
+        [value]="devices()" 
         [paginator]="true" 
         [rows]="10"
         [rowsPerPageOptions]="[10, 25, 50]"
-        [totalRecords]="store.totalRecords()"
+        [totalRecords]="totalRecords()"
+        [loading]="loading()"
         [lazy]="true"
+        [lazyLoadOnInit]="true"
         (onLazyLoad)="loadDevicesLazy($event)"
-        [globalFilterFields]="['name', 'deviceId', 'type', 'location.rack']"
         responsiveLayout="stack"
         [breakpoint]="'960px'"
         [rowHover]="true" 
@@ -38,7 +39,7 @@
                 <th pSortableColumn="type" class="white-space-nowrap">Tipo <p-sortIcon field="type"></p-sortIcon></th>
                 <th pSortableColumn="metadata.model" class="hidden lg:table-cell white-space-nowrap">Modelo <p-sortIcon field="metadata.model"></p-sortIcon></th>
                 <th pSortableColumn="location.rack" class="hidden sm:table-cell white-space-nowrap">Rack <p-sortIcon field="location.rack"></p-sortIcon></th>
-                <th class="hidden md:table-cell white-space-nowrap">Posición</th>
+                <th class="white-space-nowrap">Posición</th>
                 <th pSortableColumn="status" class="white-space-nowrap">Estado <p-sortIcon field="status"></p-sortIcon></th>
                 <th class="hidden sm:table-cell white-space-nowrap">Última Lectura</th>
                 <th class="text-right white-space-nowrap">Acciones</th>
@@ -52,7 +53,7 @@
                 <td>{{ device.type }}</td>
                 <td class="hidden lg:table-cell">{{ device.metadata?.model || 'N/A' }}</td>
                 <td class="hidden sm:table-cell"><p-tag [value]="device.location?.rack" severity="secondary"></p-tag></td>
-                <td class="hidden md:table-cell">{{ device.location?.position }} (Piso {{ device.location?.floor }})</td>
+                <td>{{ device.location?.position }} (Piso {{ device.location?.floor }})</td>
                 <td><p-tag [value]="device.status" [severity]="getSeverity(device.status)" [rounded]="true"></p-tag></td>
                 <td class="hidden sm:table-cell">
                     @if (device.lastReading) {
