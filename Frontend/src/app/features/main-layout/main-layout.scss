@@ -1,0 +1,55 @@
+.layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--surface-ground);
+
+    .layout-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background-color: var(--surface-0);
+
+        ::ng-deep .p-menubar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; // Separa Logo, Menú y Perfil
+
+            .p-menubar-root-list {
+                flex: 1; // Toma el espacio del centro
+                justify-content: center; // Centra los items
+            }
+        }
+    }
+
+    .layout-main {
+        flex: 1;
+        margin-top: 5rem;
+        padding: 2rem;
+
+        .content-container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+    }
+}
+
+// Estilo para pantallas móviles: restauramos el comportamiento alineado
+@media screen and (max-width: 991px) {
+    .layout-wrapper {
+        .layout-header {
+            ::ng-deep .p-menubar {
+                .p-menubar-root-list {
+                    flex: none;
+                    justify-content: flex-start;
+                }
+            }
+        }
+
+        .layout-main {
+            padding: 1rem;
+        }
+    }
+}
