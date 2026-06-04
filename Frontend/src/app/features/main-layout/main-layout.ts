@@ -21,7 +21,70 @@ import { CommonModule } from '@angular/common';
     MenubarModule
   ],
   templateUrl: './main-layout.html',
-  styleUrl: './main-layout.scss'
+  styles: [`
+    .layout-wrapper {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: var(--surface-ground);
+
+        .layout-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background-color: var(--surface-0);
+
+            ::ng-deep .p-menubar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                .p-menubar-root-list {
+                    flex: 1;
+                    justify-content: center;
+                }
+            }
+        }
+
+        .layout-main {
+            flex: 1;
+            margin-top: 5rem;
+            padding: 2rem;
+
+            .content-container {
+                max-width: 1440px;
+                margin: 0 auto;
+            }
+        }
+
+        .layout-footer {
+            padding: 2rem 0;
+            background-color: var(--surface-0);
+            border-top: 1px solid var(--surface-border);
+            text-align: center;
+            color: var(--text-color-secondary);
+        }
+    }
+
+    @media screen and (max-width: 991px) {
+        .layout-wrapper {
+            .layout-header {
+                ::ng-deep .p-menubar {
+                    .p-menubar-root-list {
+                        flex: none;
+                        justify-content: flex-start;
+                    }
+                }
+            }
+
+            .layout-main {
+                padding: 1rem;
+            }
+        }
+    }
+  `]
 })
 export class MainLayout implements OnInit {
   private authService = inject(AuthService);
@@ -31,7 +94,7 @@ export class MainLayout implements OnInit {
   menuItems: MenuItem[] = [
     { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
     { label: 'Devices', icon: 'pi pi-database', routerLink: '/devices' },
-    { label: 'Alerts', icon: 'pi pi-bell', routerLink: '/alerts' },
+    { label: 'Alertas', icon: 'pi pi-bell', routerLink: '/alerts' },
     { label: 'Analytics', icon: 'pi pi-chart-line', routerLink: '/analytics' }
   ];
 
