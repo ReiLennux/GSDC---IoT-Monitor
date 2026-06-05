@@ -14,6 +14,7 @@ export class AnalyticsDto {
 
 class ReadingItemDto {
   @IsString() deviceId!: string;
+  @IsOptional() @IsString() type?: string;
   @IsNumber() value!: number;
   @IsString() unit!: string;
   @IsOptional() @IsEnum(ReadingQuality) quality?: ReadingQuality;

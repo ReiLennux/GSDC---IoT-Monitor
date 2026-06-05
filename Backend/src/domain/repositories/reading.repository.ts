@@ -2,7 +2,7 @@ import { BaseRepository, PaginationResult } from './base.repository';
 import { Reading } from '../entities/reading.entity';
 
 export interface AnalyticsResult {
-  unit: string;
+  type: string;
   count: number;
   avg: number;
   min: number;

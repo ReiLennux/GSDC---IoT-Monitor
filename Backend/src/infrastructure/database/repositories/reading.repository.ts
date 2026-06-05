@@ -95,19 +95,19 @@ export class ReadingDynamoRepository
         }));
 
         const readings = (result.Items || []).map(item => this.fromPersistence(item));
-        const byUnit: Record<string, { values: number[]; count: number }> = {};
+        const byType: Record<string, { values: number[]; count: number }> = {};
 
         for (const r of readings) {
-            if (!byUnit[r.unit]) byUnit[r.unit] = { values: [], count: 0 };
-            byUnit[r.unit].values.push(r.value);
-            byUnit[r.unit].count++;
+            const key = r.type || r.unit;
+            if (!byType[key]) byType[key] = { values: [], count: 0 };
+            byType[key].values.push(r.value);
+            byType[key].count++;
         }
 
-        console.log('[analytics] byUnit keys:', Object.keys(byUnit));
-        return Object.entries(byUnit).map(([unit, data]) => {
+        return Object.entries(byType).map(([type, data]) => {
             const sorted = [...data.values].sort((a, b) => a - b);
             return {
-                unit, count: data.count,
+                type, count: data.count,
                 avg: Math.round((data.values.reduce((s, v) => s + v, 0) / data.values.length) * 100) / 100,
                 min: sorted[0], max: sorted[sorted.length - 1],
             };

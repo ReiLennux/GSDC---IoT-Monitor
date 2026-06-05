@@ -2,6 +2,7 @@ import { DeviceType, ReadingQuality, DeviceStatus } from '../domain/enums';
 
 export interface SimulatedReading {
   deviceId: string;
+  type: DeviceType;
   value: number;
   unit: string;
   quality: ReadingQuality;
@@ -62,6 +63,7 @@ export class DeviceSimulator {
 
     return {
       deviceId: device.id,
+      type: device.type,
       value: Math.round(value * 100) / 100,
       unit: config.unit,
       quality,

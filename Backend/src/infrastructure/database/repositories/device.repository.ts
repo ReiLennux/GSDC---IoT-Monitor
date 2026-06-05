@@ -1,4 +1,4 @@
-import { ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoRepository } from '../dynamo-repository';
 import { Device } from '../../../domain/entities/device.entity';
 import { DeviceRepository as IDeviceRepository } from '../../../domain/repositories/device.repository';
@@ -16,11 +16,12 @@ export class DeviceDynamoRepository
             ...item,
             PK: `DEVICE#${item.deviceId}`,
             SK: 'METADATA',
+            GSI1PK: 'DEVICE',
         };
     }
 
     protected fromPersistence(item: any): Device {
-        const { PK, SK, ...rest } = item;
+        const { PK, SK, GSI1PK, ...rest } = item;
         return Device.create(rest as Device);
     }
 
@@ -37,16 +38,22 @@ export class DeviceDynamoRepository
     }
 
     async query(options?: QueryOptions): Promise<PaginationResult<Device>> {
-        const result = await docClient.send(new ScanCommand({
-            TableName: env.dynamodbTableName,
-            FilterExpression: 'begins_with(PK, :prefix) AND SK = :sk',
-            ExpressionAttributeValues: { 
-                ':prefix': 'DEVICE#',
-                ':sk': 'METADATA'
-            },
-        }));
+        const allItems: Device[] = [];
+        let lastEvaluatedKey: Record<string, any> | undefined;
+        do {
+            const result = await docClient.send(new QueryCommand({
+                TableName: env.dynamodbTableName,
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'GSI1PK = :type',
+                ExpressionAttributeValues: { ':type': 'DEVICE' },
+                ExclusiveStartKey: lastEvaluatedKey,
+            }));
+            const items = (result.Items || []).map(item => this.fromPersistence(item));
+            allItems.push(...items);
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
         
-        let items = (result.Items || []).map(item => this.fromPersistence(item));
+        let items = allItems;
 
         if (options?.sortField) {
             const field = options.sortField;
@@ -90,27 +97,37 @@ export class DeviceDynamoRepository
     }
 
     async findByStatus(status: DeviceStatus): Promise<Device[]> {
-        const result = await docClient.send(new ScanCommand({
-            TableName: env.dynamodbTableName,
-            FilterExpression: '#st = :status AND #sk = :sk',
-            ExpressionAttributeNames: { '#st': 'status', '#sk': 'SK' },
-            ExpressionAttributeValues: {
-                ':status': status,
-                ':sk': 'METADATA',
-            },
-        }));
-        return (result.Items || []).map(item => this.fromPersistence(item));
+        const allItems: Device[] = [];
+        let lastEvaluatedKey: Record<string, any> | undefined;
+        do {
+            const result = await docClient.send(new QueryCommand({
+                TableName: env.dynamodbTableName,
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'GSI1PK = :type',
+                ExpressionAttributeValues: { ':type': 'DEVICE' },
+                ExclusiveStartKey: lastEvaluatedKey,
+            }));
+            allItems.push(...(result.Items || []).map(item => this.fromPersistence(item)));
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+        return allItems.filter((d) => d.status === status);
     }
 
     async findByRack(rackId: string): Promise<Device[]> {
-        const result = await docClient.send(new ScanCommand({
-            TableName: env.dynamodbTableName,
-            FilterExpression: '#sk = :sk',
-            ExpressionAttributeNames: { '#sk': 'SK' },
-            ExpressionAttributeValues: { ':sk': 'METADATA' },
-        }));
-        const devices = (result.Items || []).map(item => this.fromPersistence(item));
-        return devices.filter((d) => d.location?.rack === rackId);
+        const allItems: Device[] = [];
+        let lastEvaluatedKey: Record<string, any> | undefined;
+        do {
+            const result = await docClient.send(new QueryCommand({
+                TableName: env.dynamodbTableName,
+                IndexName: 'GSI1',
+                KeyConditionExpression: 'GSI1PK = :type',
+                ExpressionAttributeValues: { ':type': 'DEVICE' },
+                ExclusiveStartKey: lastEvaluatedKey,
+            }));
+            allItems.push(...(result.Items || []).map(item => this.fromPersistence(item)));
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
+        return allItems.filter((d) => d.location?.rack === rackId);
     }
 
     async updateStatus(id: string, status: DeviceStatus): Promise<Device> {

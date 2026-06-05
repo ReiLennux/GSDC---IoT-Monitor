@@ -4,13 +4,13 @@ import { DeviceRepository } from '../../domain/repositories/device.repository';
 import { AlertRepository } from '../../domain/repositories/alert.repository';
 import { Reading } from '../../domain/entities/reading.entity';
 import { Alert } from '../../domain/entities/alert.entity';
-import { AlertSeverity, AlertType, ReadingQuality, DeviceStatus } from '../../domain/enums';
+import { AlertSeverity, AlertType, ReadingQuality, DeviceStatus, DeviceType } from '../../domain/enums';
 import { BaseUseCase } from './base.usecase';
 import { GetAllReadingsDto, AnalyticsDto, BatchReadingsDto } from '../dtos';
 import { logger } from '../../utils/logger';
 
 interface ReadingItem {
-  deviceId: string; value: number; unit: string;
+  deviceId: string; type?: string; value: number; unit: string;
   quality?: ReadingQuality; timestamp?: string;
 }
 
@@ -38,7 +38,9 @@ export class ReadingUseCases extends BaseUseCase {
   async publishBatch(dto: BatchReadingsDto) {
     const now = new Date();
     const items: Reading[] = dto.readings.map(r => ({
-      deviceId: r.deviceId, value: r.value, unit: r.unit,
+      deviceId: r.deviceId,
+      type: (r.type || 'unknown') as DeviceType,
+      value: r.value, unit: r.unit,
       quality: r.quality || ReadingQuality.GOOD,
       timestamp: r.timestamp || now.toISOString(),
     }));
