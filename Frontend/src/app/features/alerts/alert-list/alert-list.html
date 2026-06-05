@@ -1,6 +1,14 @@
 <div class="card shadow-1 p-4 surface-card border-round">
-    <h3 class="text-xl font-bold mb-4">Gestión de Alertas</h3>
-    <p-table [value]="store.alerts()" [paginator]="true" [rows]="10" dataKey="alertId">
+    <div class="flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+      <h3 class="text-xl font-bold m-0">Gestión de Alertas</h3>
+      <p-selectButton
+        [options]="filterOptions"
+        [(ngModel)]="filter"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </div>
+    <p-table [value]="filteredAlerts()" [paginator]="true" [rows]="10" dataKey="alertId">
         <ng-template pTemplate="header">
             <tr>
                 <th>Dispositivo</th>
@@ -12,7 +20,7 @@
         </ng-template>
         <ng-template pTemplate="body" let-alert>
             <tr [ngClass]="{'alert-pending': !alert.acknowledged && !alert.resolvedAt, 'alert-acknowledged': alert.acknowledged && !alert.resolvedAt, 'alert-resolved': alert.resolvedAt}">
-                <td>{{ alert.deviceId }}</td>
+                <td><a [routerLink]="['/devices', alert.deviceId]" class="text-primary no-underline font-medium">Ver más</a></td>
                 <td><p-tag [severity]="getSeverity(alert.severity)" [value]="alert.severity"></p-tag></td>
                 <td>{{ alert.type }}</td>
                 <td>{{ alert.message }}</td>
@@ -20,9 +28,9 @@
                     @if (!alert.resolvedAt) {
                         <div class="flex gap-2">
                             @if (!alert.acknowledged) {
-                                <p-button label="Ack" icon="pi pi-check" size="small" severity="secondary" (onClick)="acknowledge(alert.alertId)"></p-button>
+                                <p-button label="Visto" icon="pi pi-check" size="small" severity="secondary" (onClick)="acknowledge(alert.alertId)"></p-button>
                             }
-                            <p-button label="Fix" icon="pi pi-check-circle" size="small" severity="success" (onClick)="resolve(alert.alertId)"></p-button>
+                            <p-button label="Resolver" icon="pi pi-check-circle" size="small" severity="success" (onClick)="resolve(alert.alertId)"></p-button>
                         </div>
                     }
                 </td>
