@@ -4,9 +4,11 @@ import { AlertUseCases } from '../../application/usecases';
 export class AlertController {
   constructor(private uc: AlertUseCases) {}
 
-  findAll = async (_req: Request, res: Response, next: NextFunction) => {
+  findAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.uc.list({});
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const cursor = req.query.cursor as string | undefined;
+      const result = await this.uc.list({ limit, cursor });
       res.json(result);
     } catch (err) { next(err); }
   };

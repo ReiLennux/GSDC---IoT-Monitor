@@ -2,6 +2,7 @@ import { IsOptional, IsNumber, IsString } from 'class-validator';
 
 export class ListAlertsDto {
   @IsOptional() @IsNumber() limit?: number;
+  @IsOptional() @IsString() cursor?: string;
 }
 
 export class AcknowledgeAlertDto {

@@ -10,7 +10,7 @@ export class AlertUseCases extends BaseUseCase {
   ) { super(); }
 
   async list(dto: ListAlertsDto) {
-    return this.alertRepo.query({ limit: dto.limit ?? 100, reverse: true });
+    return this.alertRepo.query({ limit: dto.limit ?? 500, cursor: dto.cursor, reverse: true });
   }
 
   async acknowledge(dto: AcknowledgeAlertDto) {

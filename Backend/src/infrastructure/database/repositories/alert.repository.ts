@@ -1,4 +1,4 @@
-import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, type QueryCommandInput } from '@aws-sdk/lib-dynamodb';
 import { DynamoRepository } from '../dynamo-repository';
 import { Alert } from '../../../domain/entities/alert.entity';
 import { AlertRepository as IAlertRepository } from '../../../domain/repositories/alert.repository';
@@ -16,11 +16,13 @@ export class AlertDynamoRepository
             PK: `ALERT#${item.alertId}`,
             SK: 'METADATA',
             GSI1PK: `DEVICE#${item.deviceId}`,
+            GSI2PK: 'ALERT',
+            GSI2SK: item.createdAt,
         };
     }
 
     protected fromPersistence(item: Record<string, unknown>): Alert {
-        const { PK, SK, GSI1PK, ...rest } = item;
+        const { PK, SK, GSI1PK, GSI2PK, GSI2SK, ...rest } = item;
         return rest as unknown as Alert;
     }
 
@@ -29,33 +31,60 @@ export class AlertDynamoRepository
     }
 
     async query(options?: QueryOptions): Promise<PaginationResult<Alert>> {
-        const items: Alert[] = [];
-        let lastKey: Record<string, unknown> | undefined;
+        const params: QueryCommandInput = {
+            TableName: env.dynamodbTableName,
+            IndexName: 'GSI2',
+            KeyConditionExpression: 'GSI2PK = :type',
+            ExpressionAttributeValues: { ':type': 'ALERT' },
+            Limit: options?.limit ?? 100,
+            ScanIndexForward: !options?.reverse,
+        };
 
-        do {
-            const result = await docClient.send(new ScanCommand({
-                TableName: env.dynamodbTableName,
-                FilterExpression: 'begins_with(PK, :pk)',
-                ExpressionAttributeValues: { ':pk': 'ALERT#' },
-                ExclusiveStartKey: lastKey,
-            }));
-            items.push(...(result.Items || []).map(item => this.fromPersistence(item)));
-            lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
-        } while (lastKey && items.length < (options?.limit ?? 1000));
+        if (options?.cursor) {
+            params.ExclusiveStartKey = JSON.parse(
+                Buffer.from(options.cursor, 'base64').toString()
+            ) as Record<string, unknown>;
+        }
 
-        return { data: items.slice(0, options?.limit ?? 1000), nextCursor: null };
+        const result = await docClient.send(new QueryCommand(params));
+        const items = (result.Items || []).map(item => this.fromPersistence(item));
+        const lastKey = result.LastEvaluatedKey;
+
+        return {
+            data: items,
+            nextCursor: lastKey
+                ? Buffer.from(JSON.stringify(lastKey)).toString('base64')
+                : null,
+        };
     }
 
-    async findByDeviceId(deviceId: string): Promise<Alert[]> {
-        const result = await docClient.send(new QueryCommand({
+    async findByDeviceId(deviceId: string, limit?: number, cursor?: string): Promise<PaginationResult<Alert>> {
+        const params: QueryCommandInput = {
             TableName: env.dynamodbTableName,
             IndexName: 'GSI1',
             KeyConditionExpression: 'GSI1PK = :gsi1pk',
             ExpressionAttributeValues: {
                 ':gsi1pk': `DEVICE#${deviceId}`,
             },
-        }));
-        return (result.Items || []).map(item => this.fromPersistence(item));
+            Limit: limit ?? 50,
+        };
+
+        if (cursor) {
+            params.ExclusiveStartKey = JSON.parse(
+                Buffer.from(cursor, 'base64').toString()
+            ) as Record<string, unknown>;
+        }
+
+        const result = await docClient.send(new QueryCommand(params));
+        const items = (result.Items || []).map(item => this.fromPersistence(item));
+        const lastKey = result.LastEvaluatedKey;
+
+        return {
+            data: items,
+            nextCursor: lastKey
+                ? Buffer.from(JSON.stringify(lastKey)).toString('base64')
+                : null,
+        };
     }
 
     async acknowledge(id: string): Promise<Alert> {

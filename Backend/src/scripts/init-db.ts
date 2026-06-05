@@ -51,6 +51,8 @@ async function createTable(): Promise<void> {
       { AttributeName: 'PK', AttributeType: 'S' },
       { AttributeName: 'SK', AttributeType: 'S' },
       { AttributeName: 'GSI1PK', AttributeType: 'S' },
+      { AttributeName: 'GSI2PK', AttributeType: 'S' },
+      { AttributeName: 'GSI2SK', AttributeType: 'S' },
     ],
     GlobalSecondaryIndexes: [
       {
@@ -58,6 +60,14 @@ async function createTable(): Promise<void> {
         KeySchema: [
           { AttributeName: 'GSI1PK', KeyType: 'HASH' },
           { AttributeName: 'SK', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
+      {
+        IndexName: 'GSI2',
+        KeySchema: [
+          { AttributeName: 'GSI2PK', KeyType: 'HASH' },
+          { AttributeName: 'GSI2SK', KeyType: 'RANGE' },
         ],
         Projection: { ProjectionType: 'ALL' },
       },
@@ -77,7 +87,7 @@ async function createTable(): Promise<void> {
   console.log('TTL enabled on attribute "TTL"');
 }
 
-async function ensureGSI(): Promise<void> {
+async function ensureGSI1(): Promise<void> {
   const desc = await client.send(new DescribeTableCommand({ TableName: TABLE_NAME }));
   const table = desc.Table;
   if (!table) throw new Error('Table not found');
@@ -114,6 +124,46 @@ async function ensureGSI(): Promise<void> {
     active = d.Table.GlobalSecondaryIndexes?.some((i) => i.IndexName === 'GSI1' && i.IndexStatus === 'ACTIVE') ?? false;
   }
   console.log('GSI1 is active');
+}
+
+async function ensureGSI2(): Promise<void> {
+  const desc = await client.send(new DescribeTableCommand({ TableName: TABLE_NAME }));
+  const table = desc.Table;
+  if (!table) throw new Error('Table not found');
+  const hasGSI2 = table.GlobalSecondaryIndexes?.some((i) => i.IndexName === 'GSI2');
+  if (hasGSI2) {
+    console.log('GSI2 already exists');
+    return;
+  }
+  console.log('Adding GSI2...');
+  await client.send(new UpdateTableCommand({
+    TableName: TABLE_NAME,
+    AttributeDefinitions: [
+      { AttributeName: 'GSI2PK', AttributeType: 'S' },
+      { AttributeName: 'GSI2SK', AttributeType: 'S' },
+    ],
+    GlobalSecondaryIndexUpdates: [
+      {
+        Create: {
+          IndexName: 'GSI2',
+          KeySchema: [
+            { AttributeName: 'GSI2PK', KeyType: 'HASH' },
+            { AttributeName: 'GSI2SK', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+      },
+    ],
+  }));
+  console.log('GSI2 added, waiting for it to become active...');
+  let active = false;
+  while (!active) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const d = await client.send(new DescribeTableCommand({ TableName: TABLE_NAME }));
+    if (!d.Table) continue;
+    active = d.Table.GlobalSecondaryIndexes?.some((i) => i.IndexName === 'GSI2' && i.IndexStatus === 'ACTIVE') ?? false;
+  }
+  console.log('GSI2 is active');
 }
 
 async function migrateDevices(): Promise<void> {
@@ -164,18 +214,57 @@ async function seedAdmin(): Promise<void> {
   console.log('Admin user seeded: admin@iot.local / Admin123!');
 }
 
+async function seedSystemUser(): Promise<void> {
+  console.log('Seeding system user...');
+
+  const systemEmail = process.env.SIM_SYSTEM_EMAIL || 'system@iot.local';
+  const systemPassword = process.env.SIM_SYSTEM_PASSWORD || 'System123!';
+
+  const existing = await docClient.send(new ScanCommand({
+    TableName: TABLE_NAME,
+    FilterExpression: 'GSI1PK = :email',
+    ExpressionAttributeValues: { ':email': `EMAIL#${systemEmail}` },
+  }));
+
+  if (existing.Items && existing.Items.length > 0) {
+    console.log('System user already exists');
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(systemPassword, 10);
+  const userId = uuid();
+
+  await docClient.send(new PutCommand({
+    TableName: TABLE_NAME,
+    Item: {
+      PK: `USER#${userId}`,
+      SK: 'METADATA',
+      GSI1PK: `EMAIL#${systemEmail}`,
+      userId,
+      email: systemEmail,
+      passwordHash,
+      role: UserRole.SYSTEM,
+      isActive: true,
+    },
+  }));
+
+  console.log(`System user seeded: ${systemEmail} / ${systemPassword}`);
+}
+
 async function main() {
   const exists = await tableExists();
 
   if (exists) {
     console.log(`Table ${TABLE_NAME} already exists`);
-    await ensureGSI();
+    await ensureGSI1();
+    await ensureGSI2();
   } else {
     await createTable();
   }
 
   await migrateDevices();
   await seedAdmin();
+  await seedSystemUser();
   console.log('Done');
 }
 
