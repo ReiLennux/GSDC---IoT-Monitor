@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -32,6 +32,7 @@ export interface RackFilterOption {
     SkeletonModule,
     RackHeatmapComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './rack-map-card.html',
   styleUrl: './rack-map-card.scss',
 })

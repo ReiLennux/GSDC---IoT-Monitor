@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, effect, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts';
@@ -30,6 +30,7 @@ type RangeKey = '24h' | '7d';
     SkeletonModule,
     RackMapCardComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analytics.html',
   styleUrl: './analytics.scss',
 })
@@ -37,6 +38,7 @@ export class Analytics implements OnInit {
   store = inject(DashboardStore);
   private themeService = inject(ThemeService);
   private dashboardService = inject(DashboardService);
+  private cdr = inject(ChangeDetectorRef);
 
   loading = signal(true);
   range = signal<RangeKey>('24h');
@@ -108,13 +110,20 @@ export class Analytics implements OnInit {
       next: (data) => {
         this.analyticsSummary.set(data);
         this.loading.set(false);
+        this.cdr.markForCheck();
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.loading.set(false);
+        this.cdr.markForCheck();
+      },
     });
 
     this.dashboardService.getTrends(days).subscribe({
-      next: (t) => this.trends.set(t),
-      error: () => {},
+      next: (t) => {
+        this.trends.set(t);
+        this.cdr.markForCheck();
+      },
+      error: () => this.cdr.markForCheck(),
     });
   }
 

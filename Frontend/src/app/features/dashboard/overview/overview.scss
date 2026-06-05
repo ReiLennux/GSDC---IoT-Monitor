@@ -14,12 +14,31 @@
 
 .chart-container {
   width: 100%;
-  height: 375px;
-  min-height: 280px;
+  height: 380px;
+  display: flex;
+  flex-direction: column;
 }
 
-.chart-empty {
-  height: 375px;
+.chart-area {
+  flex: 1;
+  min-height: 0;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.gauge-container {
+  width: 100%;
+  height: 380px;
+}
+
+.chart-empty,
+.gauge-empty {
+  height: 380px;
 }
 
 .match-height {
@@ -28,7 +47,7 @@
 }
 
 .alerts-scroll {
-  height: 375px;
+  height: 380px;
   overflow-y: auto;
 }
 

@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, effect } from '@angular/core';
+import { Component, inject, computed, signal, effect, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -31,6 +31,7 @@ interface ChartDataModel {
     SkeletonModule,
     RackMapCardComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './overview.html',
   styleUrl: './overview.scss',
 })
@@ -38,6 +39,7 @@ export class Overview {
   readonly store = inject(DashboardStore);
   private themeService = inject(ThemeService);
   private dashboardService = inject(DashboardService);
+  private cdr = inject(ChangeDetectorRef);
 
   readonly getAlertSeverityColor = getAlertSeverityColor;
   readonly getSeverityTag = getSeverityTag;
@@ -47,6 +49,19 @@ export class Overview {
   rackLoading = signal(false);
   chartData = signal<ChartDataModel[]>([]);
   colorScheme = signal<Color>(this.buildColorScheme());
+  gaugeColorScheme = signal<Color>(this.buildGaugeColorScheme());
+
+  legendColors = computed<Record<string, string>>(() => {
+    if (this.themeService.isDark()) {
+      return { Temperatura: '#00F2FE', Humedad: '#FF6B6B' };
+    }
+    return { Temperatura: '#3B82F6', Humedad: '#EF4444' };
+  });
+
+  gaugeResults = computed(() => {
+    const avg = this.store.avgTemperature();
+    return avg !== null ? [{ name: 'Temperatura', value: avg }] : [];
+  });
 
   rackFilterOptions = computed(() => [
     { label: 'Todos los racks', value: null as string | null },
@@ -63,6 +78,7 @@ export class Overview {
     effect(() => {
       this.themeService.isDark();
       this.colorScheme.set(this.buildColorScheme());
+      this.gaugeColorScheme.set(this.buildGaugeColorScheme());
     });
 
     effect(() => {
@@ -71,12 +87,12 @@ export class Overview {
 
       const tempSeries = agg['temperatureAvg'];
       if (tempSeries?.length) {
-        result.push({ name: 'Temperatura Promedio', series: [...tempSeries] });
+        result.push({ name: 'Temperatura', series: [...tempSeries] });
       }
 
       const humSeries = agg['humidityAvg'];
       if (humSeries?.length) {
-        result.push({ name: 'Humedad Promedio', series: [...humSeries] });
+        result.push({ name: 'Humedad', series: [...humSeries] });
       }
 
       this.chartData.set(result.length ? result : []);
@@ -97,16 +113,14 @@ export class Overview {
       next: (summary) => {
         this.rackSummary.set(summary);
         this.rackLoading.set(false);
+        this.cdr.markForCheck();
       },
       error: () => {
         this.rackLoading.set(false);
         this.rackSummary.set(null);
+        this.cdr.markForCheck();
       },
     });
-  }
-
-  getDeviceName(deviceId: string): string {
-    return this.store.devices().find(d => d.deviceId === deviceId)?.name ?? deviceId;
   }
 
   formatAlertTime(createdAt: string): string {
@@ -126,6 +140,15 @@ export class Overview {
       domain: this.themeService.isDark()
         ? ['#00F2FE', '#FF6B6B']
         : ['#3B82F6', '#EF4444'],
+    };
+  }
+
+  private buildGaugeColorScheme(): Color {
+    return {
+      name: 'gaugeScheme',
+      selectable: true,
+      group: ScaleType.Ordinal,
+      domain: ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'],
     };
   }
 }
