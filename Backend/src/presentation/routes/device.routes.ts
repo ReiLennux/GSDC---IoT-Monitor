@@ -75,7 +75,7 @@ router.get('/stats/summary', authenticate, controller.getStatsSummary);
  *         description: Forbidden
  */
 router.get('/', authenticate, controller.findAll);
-router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), validateDto(CreateDeviceDto), controller.create);
+router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SYSTEM), validateDto(CreateDeviceDto), controller.create);
 
 /**
  * @openapi
@@ -134,7 +134,7 @@ router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), val
  *         description: Forbidden
  */
 router.get('/:id', authenticate, controller.findById);
-router.put('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), validateDto(UpdateDeviceDto), controller.update);
+router.put('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SYSTEM), validateDto(UpdateDeviceDto), controller.update);
 
 /**
  * @openapi
@@ -165,7 +165,7 @@ router.put('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), v
  *       200:
  *         description: Status updated
  */
-router.patch('/:id/status', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), validateDto(UpdateStatusDto), controller.updateStatus);
+router.patch('/:id/status', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SYSTEM), validateDto(UpdateStatusDto), controller.updateStatus);
 router.delete('/:id', authenticate, authorize(UserRole.ADMIN), controller.delete);
 
 /**
