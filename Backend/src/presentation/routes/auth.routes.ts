@@ -75,7 +75,7 @@ router.post('/login', authRateLimit, validateDto(LoginDto), controller.login);
  *       401:
  *         description: Invalid refresh token
  */
-router.post('/refresh', validateDto(RefreshDto), controller.refresh);
+router.post('/refresh', authRateLimit, validateDto(RefreshDto), controller.refresh);
 
 /**
  * @openapi
