@@ -13,4 +13,5 @@ export const env = {
   dynamodbTableName: process.env.DYNAMODB_TABLE_NAME || 'IoT_Monitor_Table',
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || 'local',
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'local',
+  iotApiKey: process.env.IOT_API_KEY || '',
 };

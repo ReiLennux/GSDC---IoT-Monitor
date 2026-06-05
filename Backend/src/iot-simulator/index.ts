@@ -1,13 +1,21 @@
 import { simConfig } from './config';
 import { DeviceSimulator } from './device-simulator';
 import { ApiClient } from './api-client';
+import { MqttClient } from './mqtt-client';
 import { logger } from '../utils/logger';
 
 async function main() {
-  logger.info(`IoT Simulator starting — ${simConfig.activeDevices} devices, ${simConfig.publishIntervalMs}ms interval`);
+  logger.info(`IoT Simulator starting — ${simConfig.activeDevices} devices, ${simConfig.publishIntervalMs}ms interval, mode=${simConfig.mqttMode}`);
 
   const api = new ApiClient();
   const simulator = new DeviceSimulator(simConfig.anomalyProbability);
+
+  let mqtt: MqttClient | null = null;
+  if (simConfig.mqttMode === 'aws') {
+    mqtt = new MqttClient(simConfig.iotEndpoint, simConfig.certPath);
+    await mqtt.connect();
+    logger.info(`MQTT client ready — endpoint: ${simConfig.iotEndpoint}`);
+  }
 
   await api.login();
 
@@ -29,10 +37,15 @@ async function main() {
         const reading = simulator.generateDeviceReading(device.id);
         if (!reading) return;
 
-        if (simConfig.mqttMode === 'local') {
-          await api.publishBatch([reading]);
+        if (simConfig.mqttMode === 'aws' && mqtt) {
+          const topic = `${simConfig.mqttTopicPrefix}/${device.id}/telemetry`;
+          try {
+            await mqtt.publish(topic, reading as unknown as Record<string, unknown>);
+          } catch (err) {
+            logger.error(`MQTT publish failed for ${device.id}`, err);
+          }
         } else {
-          logger.warn('MQTT mode not implemented yet');
+          await api.publishBatch([reading]);
         }
       }, intervalMs);
 
@@ -44,17 +57,15 @@ async function main() {
 
   logger.info(`Started ${simulator.getDevices().length} independent device timers`);
 
-  process.on('SIGINT', () => {
+  const cleanup = async () => {
     timers.forEach(clearInterval);
+    if (mqtt) await mqtt.disconnect();
     logger.info('Simulator stopped');
     process.exit(0);
-  });
+  };
 
-  process.on('SIGTERM', () => {
-    timers.forEach(clearInterval);
-    logger.info('Simulator stopped');
-    process.exit(0);
-  });
+  process.on('SIGINT', cleanup);
+  process.on('SIGTERM', cleanup);
 }
 
 main().catch((err) => {

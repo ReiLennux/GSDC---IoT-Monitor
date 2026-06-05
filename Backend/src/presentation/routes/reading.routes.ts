@@ -1,14 +1,25 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ReadingController } from '../controllers/reading.controller';
 import { readingUseCases } from '../../container';
 import { BatchReadingsDto } from '../../application/dtos';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validateDto } from '../middleware/validate.middleware';
 import { UserRole } from '../../domain/enums';
+import { env } from '../../config/env';
 
 const router = Router();
 
 const controller = new ReadingController(readingUseCases);
+
+router.post('/iot-ingest', (req: Request, res: Response, next: NextFunction) => {
+  const key = req.headers['x-api-key'] as string | undefined;
+  if (env.iotApiKey && key !== env.iotApiKey) {
+    return res.status(401).json({ error: 'Invalid API key' });
+  }
+  const body = { readings: [req.body] };
+  req.body = body;
+  next();
+}, controller.createBatch);
 
 /**
  * @openapi
