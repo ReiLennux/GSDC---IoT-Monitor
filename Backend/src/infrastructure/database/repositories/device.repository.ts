@@ -11,7 +11,7 @@ export class DeviceDynamoRepository
     extends DynamoRepository<Device>
     implements IDeviceRepository
 {
-    protected toPersistence(item: Device): any {
+    protected toPersistence(item: Device): Record<string, unknown> {
         return {
             ...item,
             PK: `DEVICE#${item.deviceId}`,
@@ -20,9 +20,9 @@ export class DeviceDynamoRepository
         };
     }
 
-    protected fromPersistence(item: any): Device {
+    protected fromPersistence(item: Record<string, unknown>): Device {
         const { PK, SK, GSI1PK, ...rest } = item;
-        return Device.create(rest as Device);
+        return Device.create(rest as unknown as Device);
     }
 
     async findById(id: string): Promise<Device | null> {
@@ -39,7 +39,7 @@ export class DeviceDynamoRepository
 
     async query(options?: QueryOptions): Promise<PaginationResult<Device>> {
         const allItems: Device[] = [];
-        let lastEvaluatedKey: Record<string, any> | undefined;
+        let lastEvaluatedKey: Record<string, unknown> | undefined;
         do {
             const result = await docClient.send(new QueryCommand({
                 TableName: env.dynamodbTableName,
@@ -50,7 +50,7 @@ export class DeviceDynamoRepository
             }));
             const items = (result.Items || []).map(item => this.fromPersistence(item));
             allItems.push(...items);
-            lastEvaluatedKey = result.LastEvaluatedKey;
+            lastEvaluatedKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
         } while (lastEvaluatedKey);
         
         let items = allItems;
@@ -98,7 +98,7 @@ export class DeviceDynamoRepository
 
     async findByStatus(status: DeviceStatus): Promise<Device[]> {
         const allItems: Device[] = [];
-        let lastEvaluatedKey: Record<string, any> | undefined;
+        let lastEvaluatedKey: Record<string, unknown> | undefined;
         do {
             const result = await docClient.send(new QueryCommand({
                 TableName: env.dynamodbTableName,
@@ -108,14 +108,14 @@ export class DeviceDynamoRepository
                 ExclusiveStartKey: lastEvaluatedKey,
             }));
             allItems.push(...(result.Items || []).map(item => this.fromPersistence(item)));
-            lastEvaluatedKey = result.LastEvaluatedKey;
+            lastEvaluatedKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
         } while (lastEvaluatedKey);
         return allItems.filter((d) => d.status === status);
     }
 
     async findByRack(rackId: string): Promise<Device[]> {
         const allItems: Device[] = [];
-        let lastEvaluatedKey: Record<string, any> | undefined;
+        let lastEvaluatedKey: Record<string, unknown> | undefined;
         do {
             const result = await docClient.send(new QueryCommand({
                 TableName: env.dynamodbTableName,
