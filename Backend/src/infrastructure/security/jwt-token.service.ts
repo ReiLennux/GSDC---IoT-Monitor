@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { TokenService } from '../../application/ports/token-service';
 import { env } from '../../config/env';
 
@@ -9,8 +9,8 @@ export class JwtTokenService implements TokenService {
     this.secret = secret;
   }
 
-  sign(payload: any, options?: { expiresIn: string | number }): string {
-    return jwt.sign(payload, this.secret, options as any);
+  sign(payload: string | Buffer | object, options?: SignOptions): string {
+    return jwt.sign(payload, this.secret, options);
   }
 
   verify<T>(token: string): T {

@@ -15,8 +15,8 @@ import {
 import { env } from '../../config/env';
 
 export abstract class DynamoRepository<T> implements BaseRepository<T> {
-    protected abstract toPersistence(item: T): any;
-    protected abstract fromPersistence(item: any): T;
+    protected abstract toPersistence(item: T): Record<string, unknown>;
+    protected abstract fromPersistence(item: Record<string, unknown>): T;
 
     async create(item: T): Promise<T> {
         const persistenceItem = this.toPersistence(item);
@@ -36,8 +36,7 @@ export abstract class DynamoRepository<T> implements BaseRepository<T> {
     }
 
     protected async _update(pk: string, sk: string, data: Partial<T>): Promise<T> {
-        // Note: Partial<T> mapping might be tricky if keys are renamed, 
-        // but here we mostly use the same names for non-key fields.
+
         const keys = Object.keys(data as object);
         const setExpression = keys.map((_, i) => `#f${i} = :v${i}`).join(', ');
         const attrNames = keys.reduce(
@@ -57,7 +56,7 @@ export abstract class DynamoRepository<T> implements BaseRepository<T> {
             ExpressionAttributeValues: attrValues,
             ReturnValues: 'ALL_NEW',
         }));
-        return this.fromPersistence(result.Attributes);
+        return this.fromPersistence(result.Attributes as Record<string, unknown>);
     }
 
     protected async _delete(pk: string, sk: string): Promise<void> {
@@ -92,7 +91,7 @@ export abstract class DynamoRepository<T> implements BaseRepository<T> {
         if (options?.cursor) {
             params.ExclusiveStartKey = JSON.parse(
                 Buffer.from(options.cursor, 'base64').toString()
-            );
+            ) as Record<string, unknown>;
         }
 
         if (options?.reverse) {

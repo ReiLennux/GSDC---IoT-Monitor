@@ -31,8 +31,8 @@ async function tableExists(): Promise<boolean> {
   try {
     await client.send(new DescribeTableCommand({ TableName: TABLE_NAME }));
     return true;
-  } catch (err: any) {
-    if (err.name === 'ResourceNotFoundException') return false;
+  } catch (err: unknown) {
+    if ((err as { name?: string }).name === 'ResourceNotFoundException') return false;
     throw err;
   }
 }

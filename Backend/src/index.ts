@@ -23,11 +23,12 @@ async function checkDatabase() {
     });
     await client.send(new DescribeTableCommand({ TableName: env.dynamodbTableName }));
     logger.info(`DynamoDB table "${env.dynamodbTableName}" ready`);
-  } catch (err: any) {
-    if (err.name === 'ResourceNotFoundException') {
+  } catch (err: unknown) {
+    const error = err as { name?: string };
+    if (error.name === 'ResourceNotFoundException') {
       logger.warn(`DynamoDB table "${env.dynamodbTableName}" not found — run "npm run db:init"`);
     } else {
-      logger.error(`DynamoDB check failed: ${err.message}`);
+      logger.error(`DynamoDB check failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 }

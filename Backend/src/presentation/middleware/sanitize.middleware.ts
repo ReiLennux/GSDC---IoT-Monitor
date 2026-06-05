@@ -22,12 +22,12 @@ export function sanitizeInput(req: Request, _res: Response, next: NextFunction):
   if (req.body) req.body = sanitizeValue(req.body) as typeof req.body;
   if (req.query && typeof req.query === 'object') {
     for (const key of Object.keys(req.query)) {
-      (req.query as any)[key] = sanitizeValue(req.query[key]);
+      (req.query as Record<string, unknown>)[key] = sanitizeValue(req.query[key]);
     }
   }
   if (req.params && typeof req.params === 'object') {
     for (const key of Object.keys(req.params)) {
-      (req.params as any)[key] = sanitizeValue(req.params[key]);
+      (req.params as Record<string, unknown>)[key] = sanitizeValue(req.params[key]);
     }
   }
   next();
