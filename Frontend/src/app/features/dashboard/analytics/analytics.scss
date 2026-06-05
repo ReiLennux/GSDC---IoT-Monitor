@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 320px;
+  min-height: 260px;
+
+  ngx-charts-line-chart,
+  ngx-charts-bar-vertical {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}

@@ -1,0 +1,75 @@
+<div class="grid p-4">
+  <div class="col-12 flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-3 mb-2">
+    <div>
+      <h2 class="m-0 text-2xl font-bold">Analytics</h2>
+      <p class="m-0 mt-1 text-500 text-sm">Tendencias y agregados de lecturas del datacenter</p>
+    </div>
+    <div class="flex flex-wrap align-items-center gap-2">
+      <p-selectButton
+        [options]="rangeOptions"
+        [ngModel]="range()"
+        (ngModelChange)="onRangeChange($event)"
+        optionLabel="label"
+        optionValue="value"
+      />
+      <p-button label="Exportar CSV" icon="pi pi-download" (onClick)="exportCSV()" [outlined]="true" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="col-12">
+      <div class="grid">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="col-12 md:col-4">
+            <p-skeleton height="5rem" />
+          </div>
+        }
+        <div class="col-12 lg:col-6"><p-skeleton height="20rem" class="mt-3" /></div>
+        <div class="col-12 lg:col-6"><p-skeleton height="20rem" class="mt-3" /></div>
+      </div>
+    </div>
+  } @else {
+    @if (summaryCards().length > 0) {
+      @for (item of summaryCards(); track item.unit) {
+        <div class="col-12 sm:col-6 md:col-4 lg:col-3">
+          <p-card styleClass="shadow-1 h-full">
+            <div class="text-500 text-xs uppercase font-semibold mb-1">{{ item.unit }}</div>
+            <div class="text-2xl font-bold text-900">{{ item.avg }} <span class="text-sm font-normal text-500">prom.</span></div>
+            <div class="text-sm text-500 mt-1">{{ item.min }} – {{ item.max }} · {{ item.count }} lecturas</div>
+          </p-card>
+        </div>
+      }
+    }
+
+    <div class="col-12 lg:col-6">
+      <p-card [header]="'Tendencia por tipo (' + range() + ')'" styleClass="shadow-2 h-full">
+        <div class="chart-wrapper">
+          <ngx-charts-line-chart
+            [results]="lineChartData()"
+            [xAxis]="true"
+            [yAxis]="true"
+            [legend]="true"
+            [scheme]="colorScheme()"
+          />
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-6">
+      <p-card header="Consumo / actividad por rack" styleClass="shadow-2 h-full">
+        <div class="chart-wrapper">
+          <ngx-charts-bar-vertical
+            [results]="barChartData()"
+            [xAxis]="true"
+            [yAxis]="true"
+            [scheme]="colorScheme()"
+          />
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12">
+      <app-rack-map-card [racks]="store.racks()" />
+    </div>
+  }
+</div>

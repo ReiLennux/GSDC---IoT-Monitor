@@ -92,7 +92,6 @@ export class ReadingDynamoRepository
                 ':prefix': 'READING#',
                 ':since': `READING#${since}`,
             },
-            Limit: 1000,
         }));
 
         const readings = (result.Items || []).map(item => this.fromPersistence(item));
@@ -104,6 +103,7 @@ export class ReadingDynamoRepository
             byUnit[r.unit].count++;
         }
 
+        console.log('[analytics] byUnit keys:', Object.keys(byUnit));
         return Object.entries(byUnit).map(([unit, data]) => {
             const sorted = [...data.values].sort((a, b) => a - b);
             return {
