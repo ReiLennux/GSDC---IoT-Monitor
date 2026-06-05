@@ -1,4 +1,4 @@
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoRepository } from '../dynamo-repository';
 import { Alert } from '../../../domain/entities/alert.entity';
 import { AlertRepository as IAlertRepository } from '../../../domain/repositories/alert.repository';
@@ -10,7 +10,7 @@ export class AlertDynamoRepository
     extends DynamoRepository<Alert>
     implements IAlertRepository
 {
-    protected toPersistence(item: Alert): any {
+    protected toPersistence(item: Alert): Record<string, unknown> {
         return {
             ...item,
             PK: `ALERT#${item.alertId}`,
@@ -19,9 +19,9 @@ export class AlertDynamoRepository
         };
     }
 
-    protected fromPersistence(item: any): Alert {
+    protected fromPersistence(item: Record<string, unknown>): Alert {
         const { PK, SK, GSI1PK, ...rest } = item;
-        return rest as Alert;
+        return rest as unknown as Alert;
     }
 
     async findById(id: string): Promise<Alert | null> {
@@ -29,7 +29,21 @@ export class AlertDynamoRepository
     }
 
     async query(options?: QueryOptions): Promise<PaginationResult<Alert>> {
-        return this._query('ALERT#', { ...options, skBeginsWith: 'METADATA' });
+        const items: Alert[] = [];
+        let lastKey: Record<string, unknown> | undefined;
+
+        do {
+            const result = await docClient.send(new ScanCommand({
+                TableName: env.dynamodbTableName,
+                FilterExpression: 'begins_with(PK, :pk)',
+                ExpressionAttributeValues: { ':pk': 'ALERT#' },
+                ExclusiveStartKey: lastKey,
+            }));
+            items.push(...(result.Items || []).map(item => this.fromPersistence(item)));
+            lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
+        } while (lastKey && items.length < (options?.limit ?? 1000));
+
+        return { data: items.slice(0, options?.limit ?? 1000), nextCursor: null };
     }
 
     async findByDeviceId(deviceId: string): Promise<Alert[]> {

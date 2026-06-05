@@ -10,7 +10,7 @@ export class UserDynamoRepository
     extends DynamoRepository<User>
     implements IUserRepository
 {
-    protected toPersistence(item: User): any {
+    protected toPersistence(item: User): Record<string, unknown> {
         return {
             ...item,
             PK: `USER#${item.userId}`,
@@ -19,9 +19,9 @@ export class UserDynamoRepository
         };
     }
 
-    protected fromPersistence(item: any): User {
+    protected fromPersistence(item: Record<string, unknown>): User {
         const { PK, SK, GSI1PK, ...rest } = item;
-        return rest as User;
+        return rest as unknown as User;
     }
 
     async findById(id: string): Promise<User | null> {

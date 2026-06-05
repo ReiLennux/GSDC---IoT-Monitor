@@ -1,4 +1,4 @@
-import { BatchWriteCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { BatchWriteCommand, ScanCommand, type ScanCommandInput } from '@aws-sdk/lib-dynamodb';
 import { DynamoRepository } from '../dynamo-repository';
 import { type PaginationResult } from '../../../domain/repositories/base.repository';
 import { Reading } from '../../../domain/entities/reading.entity';
@@ -10,7 +10,7 @@ export class ReadingDynamoRepository
     extends DynamoRepository<Reading>
     implements IReadingRepository
 {
-    protected toPersistence(item: Reading): any {
+    protected toPersistence(item: Reading): Record<string, unknown> {
         return {
             ...item,
             PK: `DEVICE#${item.deviceId}`,
@@ -19,9 +19,9 @@ export class ReadingDynamoRepository
         };
     }
 
-    protected fromPersistence(item: any): Reading {
+    protected fromPersistence(item: Record<string, unknown>): Reading {
         const { PK, SK, TTL, ...rest } = item;
-        return rest as Reading;
+        return rest as unknown as Reading;
     }
 
     async findByDeviceId(
@@ -41,7 +41,7 @@ export class ReadingDynamoRepository
         limit = 20,
         cursor?: string
     ): Promise<PaginationResult<Reading>> {
-        const params: any = {
+        const params: ScanCommandInput = {
             TableName: env.dynamodbTableName,
             FilterExpression: 'begins_with(SK, :prefix)',
             ExpressionAttributeValues: {
@@ -53,7 +53,7 @@ export class ReadingDynamoRepository
         if (cursor) {
             params.ExclusiveStartKey = JSON.parse(
                 Buffer.from(cursor, 'base64').toString()
-            );
+            ) as Record<string, unknown>;
         }
 
         const result = await docClient.send(new ScanCommand(params));
@@ -82,7 +82,7 @@ export class ReadingDynamoRepository
         }
     }
 
-    async getAnalytics(hours: number): Promise<AnalyticsResult[]> {
+    async getAnalytics(hours: number, deviceTypeMap?: Record<string, string>): Promise<AnalyticsResult[]> {
         const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
         const result = await docClient.send(new ScanCommand({
@@ -98,7 +98,7 @@ export class ReadingDynamoRepository
         const byType: Record<string, { values: number[]; count: number }> = {};
 
         for (const r of readings) {
-            const key = r.type || r.unit;
+            const key = deviceTypeMap?.[r.deviceId] ?? r.type ?? r.unit;
             if (!byType[key]) byType[key] = { values: [], count: 0 };
             byType[key].values.push(r.value);
             byType[key].count++;
