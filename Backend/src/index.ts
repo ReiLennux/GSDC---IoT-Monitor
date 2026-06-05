@@ -34,6 +34,7 @@ async function checkDatabase() {
 }
 
 const app = express();
+app.set('trust proxy', 1);
 const httpServer = createServer(app);
 
 app.use(helmet({
