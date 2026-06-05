@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -11,6 +11,7 @@ import { Device, DeviceType } from '../../../core/models/device.model';
   selector: 'app-device-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, DialogModule, ButtonModule, InputTextModule, SelectModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './device-form.html',
 })
 export class DeviceFormComponent implements OnInit {
@@ -82,10 +83,10 @@ export class DeviceFormComponent implements OnInit {
     if (this.deviceForm.valid) {
       const payload: Partial<Device> = {
         name: this.deviceForm.value.name as string,
-        type: this.deviceForm.value.type as any,
+        type: this.deviceForm.value.type as DeviceType,
         location: {
             rack: this.deviceForm.value.rack as string,
-            position: this.deviceForm.value.position as string,
+            position: this.deviceForm.value.position as number,
             floor: this.deviceForm.value.floor as number
         },
         metadata: {

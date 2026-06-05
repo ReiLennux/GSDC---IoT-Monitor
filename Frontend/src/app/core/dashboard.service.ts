@@ -23,7 +23,7 @@ export interface DashboardOverview {
 }
 
 export interface AnalyticsUnitSummary {
-  unit: string;
+  type: string;
   count: number;
   avg: number;
   min: number;
