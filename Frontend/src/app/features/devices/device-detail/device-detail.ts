@@ -2,7 +2,9 @@ import { Component, inject, OnInit, OnDestroy, signal, computed, effect, ChangeD
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts';
+
 import { CardModule } from 'primeng/card';
 import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
@@ -278,7 +280,7 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
   }
 
   acknowledge(id: string) {
-    this.http.patch<Alert>(`/api/v1/alerts/${id}/acknowledge`, {}).subscribe({
+    this.http.patch<Alert>(`${environment.apiUrl}/alerts/${id}/acknowledge`, {}).subscribe({
       next: (alert) => {
         this.deviceAlerts.update(alerts => alerts.map(a => a.alertId === alert.alertId ? { ...a, acknowledged: alert.acknowledged } : a));
         this.store.updateAlert(alert.alertId, { acknowledged: alert.acknowledged });
@@ -288,7 +290,7 @@ export class DeviceDetailComponent implements OnInit, OnDestroy {
   }
 
   resolve(id: string) {
-    this.http.patch<Alert>(`/api/v1/alerts/${id}/resolve`, {}).subscribe({
+    this.http.patch<Alert>(`${environment.apiUrl}/alerts/${id}/resolve`, {}).subscribe({
       next: (alert) => {
         this.deviceAlerts.update(alerts => alerts.map(a => a.alertId === alert.alertId ? { ...a, acknowledged: alert.acknowledged, resolvedAt: alert.resolvedAt } : a));
         this.store.updateAlert(alert.alertId, { acknowledged: alert.acknowledged, resolvedAt: alert.resolvedAt });

@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { DashboardStore } from '../../../state/dashboard.store';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { Alert } from '../../../core/models/alert.model';
 
 @Component({
@@ -57,7 +58,7 @@ export class AlertListComponent {
   }
 
   acknowledge(id: string) {
-    this.http.patch<Alert>(`/api/v1/alerts/${id}/acknowledge`, {}).subscribe({
+    this.http.patch<Alert>(`${environment.apiUrl}/alerts/${id}/acknowledge`, {}).subscribe({
       next: (alert) => {
         this.store.updateAlert(alert.alertId, { acknowledged: alert.acknowledged });
         this.cdr.markForCheck();
@@ -66,7 +67,7 @@ export class AlertListComponent {
   }
 
   resolve(id: string) {
-    this.http.patch<Alert>(`/api/v1/alerts/${id}/resolve`, {}).subscribe({
+    this.http.patch<Alert>(`${environment.apiUrl}/alerts/${id}/resolve`, {}).subscribe({
       next: (alert) => {
         this.store.updateAlert(alert.alertId, { acknowledged: alert.acknowledged, resolvedAt: alert.resolvedAt });
         this.cdr.markForCheck();

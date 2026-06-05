@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { retry, timer, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { io, Socket } from 'socket.io-client';
+import { environment } from '../../environments/environment';
 import { DashboardStore } from '../state/dashboard.store';
 import { Device, DeviceStatus } from './models/device.model';
 import { Alert } from './models/alert.model';
@@ -18,7 +19,7 @@ export class IoTService {
   initializeData() {
     this.store.setLoading(true);
 
-    this.http.get<{ data: Device[]; total?: number }>('/api/v1/devices', {
+    this.http.get<{ data: Device[]; total?: number }>(`${environment.apiUrl}/devices`, {
       params: new HttpParams().set('limit', '500'),
     }).pipe(
       retry({ count: 3, delay: (_, retryCount) => timer(1000 * 2 ** retryCount) }),
@@ -32,7 +33,7 @@ export class IoTService {
       this.tryComplete();
     });
 
-    this.http.get<{ data: Alert[] }>('/api/v1/alerts', { params: new HttpParams().set('limit', '500') }).pipe(
+    this.http.get<{ data: Alert[] }>(`${environment.apiUrl}/alerts`, { params: new HttpParams().set('limit', '500') }).pipe(
       retry({ count: 3, delay: (_, retryCount) => timer(1000 * 2 ** retryCount) }),
       catchError(() => {
         console.warn('IoTService: fallback alerts empty');
@@ -57,7 +58,7 @@ export class IoTService {
   }
 
   private connectWebSocket() {
-    this.socket = io({
+    this.socket = io(environment.socketUrl, {
       path: '/socket.io',
       transports: ['websocket'],
     });

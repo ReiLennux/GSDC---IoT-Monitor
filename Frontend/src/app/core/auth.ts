@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +18,7 @@ export class AuthService {
 
   login(credentials: { email: string; password: string }) {
     this.userEmail.set(credentials.email);
-    return this.http.post<{ tokens: { accessToken: string; refreshToken: string } }>('/api/v1/auth/login', credentials)
+    return this.http.post<{ tokens: { accessToken: string; refreshToken: string } }>(`${environment.apiUrl}/auth/login`, credentials)
       .pipe(tap(res => {
         this.saveTokens(res.tokens.accessToken, res.tokens.refreshToken);
       }));
@@ -29,7 +30,7 @@ export class AuthService {
 
   refreshToken() {
     const refreshToken = localStorage.getItem('refreshToken');
-    return this.http.post<{ accessToken: string; refreshToken: string }>('/api/v1/auth/refresh', { refreshToken })
+    return this.http.post<{ accessToken: string; refreshToken: string }>(`${environment.apiUrl}/auth/refresh`, { refreshToken })
       .pipe(tap(res => {
         this.saveTokens(res.accessToken, res.refreshToken);
       }));

@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { Device } from './models/device.model';
 import { Reading } from './models/reading.model';
 import { Alert } from './models/alert.model';
@@ -10,7 +11,7 @@ import { Observable } from 'rxjs';
 })
 export class DeviceService {
   private http = inject(HttpClient);
-  private apiUrl = '/api/v1/devices';
+  private apiUrl = `${environment.apiUrl}/devices`;
 
   getAll(limit: number = 10, cursor?: string, sortField?: string, sortOrder?: number): Observable<{ data: Device[], nextCursor: string | null, total?: number }> {
     let url = `${this.apiUrl}?limit=${limit}`;

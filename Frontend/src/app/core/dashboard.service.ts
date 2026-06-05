@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Alert } from './models/alert.model';
 import { Device } from './models/device.model';
 
@@ -48,12 +49,12 @@ export class DashboardService {
   private http = inject(HttpClient);
 
   getOverview(): Observable<DashboardOverview> {
-    return this.http.get<DashboardOverview>('/api/v1/dashboard/overview');
+    return this.http.get<DashboardOverview>(`${environment.apiUrl}/dashboard/overview`);
   }
 
   getRackSummary(rackId: string): Observable<RackSummary> {
     return this.http
-      .get<RackSummaryApi>(`/api/v1/dashboard/rack/${encodeURIComponent(rackId)}`)
+      .get<RackSummaryApi>(`${environment.apiUrl}/dashboard/rack/${encodeURIComponent(rackId)}`)
       .pipe(
         map((res) => ({
           rack: res.rack,
@@ -67,13 +68,13 @@ export class DashboardService {
   }
 
   getTrends(days: number): Observable<DashboardTrends> {
-    return this.http.get<DashboardTrends>('/api/v1/dashboard/trends', {
+    return this.http.get<DashboardTrends>(`${environment.apiUrl}/dashboard/trends`, {
       params: new HttpParams().set('days', String(days)),
     });
   }
 
   getAnalytics(hours: number): Observable<AnalyticsUnitSummary[]> {
-    return this.http.get<AnalyticsUnitSummary[]>('/api/v1/readings/analytics', {
+    return this.http.get<AnalyticsUnitSummary[]>(`${environment.apiUrl}/readings/analytics`, {
       params: new HttpParams().set('hours', String(hours)),
     });
   }
