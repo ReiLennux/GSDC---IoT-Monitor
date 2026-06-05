@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Device } from './models/device.model';
 import { Reading } from './models/reading.model';
+import { Alert } from './models/alert.model';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -43,5 +44,11 @@ export class DeviceService {
     let url = `${this.apiUrl}/${deviceId}/readings?limit=${limit}`;
     if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
     return this.http.get<{ data: Reading[], nextCursor: string | null }>(url);
+  }
+
+  getAlerts(deviceId: string, limit: number = 50, cursor?: string): Observable<{ data: Alert[]; nextCursor: string | null }> {
+    let url = `${this.apiUrl}/${deviceId}/alerts?limit=${limit}`;
+    if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
+    return this.http.get<{ data: Alert[]; nextCursor: string | null }>(url);
   }
 }

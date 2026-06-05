@@ -107,6 +107,6 @@ export class DeviceUseCases extends BaseUseCase {
   }
 
   async getAlerts(dto: GetDeviceAlertsDto) {
-    return this.alertRepo.findByDeviceId(dto.deviceId);
+    return this.alertRepo.findByDeviceId(dto.deviceId, dto.limit, dto.cursor);
   }
 }

@@ -1,4 +1,4 @@
-import { QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, type QueryCommandInput } from '@aws-sdk/lib-dynamodb';
 import { DynamoRepository } from '../dynamo-repository';
 import { Device } from '../../../domain/entities/device.entity';
 import { DeviceRepository as IDeviceRepository } from '../../../domain/repositories/device.repository';
@@ -38,22 +38,33 @@ export class DeviceDynamoRepository
     }
 
     async query(options?: QueryOptions): Promise<PaginationResult<Device>> {
-        const allItems: Device[] = [];
-        let lastEvaluatedKey: Record<string, unknown> | undefined;
-        do {
-            const result = await docClient.send(new QueryCommand({
-                TableName: env.dynamodbTableName,
-                IndexName: 'GSI1',
-                KeyConditionExpression: 'GSI1PK = :type',
-                ExpressionAttributeValues: { ':type': 'DEVICE' },
-                ExclusiveStartKey: lastEvaluatedKey,
-            }));
-            const items = (result.Items || []).map(item => this.fromPersistence(item));
-            allItems.push(...items);
-            lastEvaluatedKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
-        } while (lastEvaluatedKey);
-        
-        let items = allItems;
+        const limit = options?.limit ?? 10;
+
+        const countResult = await docClient.send(new QueryCommand({
+            TableName: env.dynamodbTableName,
+            IndexName: 'GSI1',
+            KeyConditionExpression: 'GSI1PK = :type',
+            ExpressionAttributeValues: { ':type': 'DEVICE' },
+            Select: 'COUNT',
+        }));
+        const total = countResult.Count ?? 0;
+
+        const params: QueryCommandInput = {
+            TableName: env.dynamodbTableName,
+            IndexName: 'GSI1',
+            KeyConditionExpression: 'GSI1PK = :type',
+            ExpressionAttributeValues: { ':type': 'DEVICE' },
+            Limit: limit,
+        };
+
+        if (options?.cursor) {
+            params.ExclusiveStartKey = JSON.parse(
+                Buffer.from(options.cursor, 'base64').toString()
+            ) as Record<string, unknown>;
+        }
+
+        const result = await docClient.send(new QueryCommand(params));
+        let items = (result.Items || []).map(item => this.fromPersistence(item));
 
         if (options?.sortField) {
             const field = options.sortField;
@@ -70,19 +81,12 @@ export class DeviceDynamoRepository
             });
         }
 
-        const total = items.length;
-        const limit = options?.limit ?? 10;
-        const start = options?.cursor ? parseInt(options.cursor, 10) : 0;
-        const offset = Number.isFinite(start) && start > 0 ? start : 0;
-        const page = items.slice(offset, offset + limit);
-        const nextOffset = offset + limit;
-        const nextCursor = nextOffset < total ? String(nextOffset) : null;
+        const lastKey = result.LastEvaluatedKey;
+        const nextCursor = lastKey
+            ? Buffer.from(JSON.stringify(lastKey)).toString('base64')
+            : null;
 
-        return {
-            data: page,
-            nextCursor,
-            total,
-        };
+        return { data: items, nextCursor, total };
     }
 
     private getSortValue(item: Device, field: string): string | number | undefined {

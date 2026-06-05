@@ -71,6 +71,7 @@ export class DeviceList implements OnInit, OnDestroy {
   private statusFilter: string | null = null;
   typeFilter = signal<string | null>(null);
   private lastLazyEvent: TableLazyLoadEvent = { first: 0, rows: 10 };
+  private cursors: (string | null)[] = [];
 
   deviceDialog = signal(false);
   editingDevice = signal<Device | null>(null);
@@ -134,11 +135,14 @@ export class DeviceList implements OnInit, OnDestroy {
       return;
     }
 
-    const cursor = first > 0 ? String(first) : undefined;
-    this.deviceService.getAll(rows, cursor, sortField, sortOrder).subscribe({
+    const pageIndex = first / rows;
+    const cursor = this.cursors[pageIndex] ?? null;
+    this.deviceService.getAll(rows, cursor ?? undefined, sortField, sortOrder).subscribe({
       next: (res) => {
         this.devices.set(res.data);
         this.totalRecords.set(res.total ?? res.data.length);
+        this.cursors[pageIndex] = cursor;
+        this.cursors[pageIndex + 1] = res.nextCursor;
         this.loading.set(false);
         this.cdr.markForCheck();
       },

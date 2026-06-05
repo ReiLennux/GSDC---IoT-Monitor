@@ -71,7 +71,9 @@ export class DeviceController {
 
   getAlerts = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const alerts = await this.uc.getAlerts({ deviceId: req.params.id as string });
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const cursor = req.query.cursor as string | undefined;
+      const alerts = await this.uc.getAlerts({ deviceId: req.params.id as string, limit, cursor });
       res.json(alerts);
     } catch (err) { next(err); }
   };

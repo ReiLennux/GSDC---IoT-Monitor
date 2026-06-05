@@ -3,7 +3,7 @@ export type DeviceStatus = 'online' | 'offline' | 'maintenance' | 'critical';
 
 export interface Location {
   rack: string;
-  position: string;
+  position: number;
   floor: number;
 }
 
