@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
@@ -25,6 +25,7 @@ import { BadgeModule } from 'primeng/badge';
     MenubarModule,
     BadgeModule,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './main-layout.html',
   styles: [`
     .layout-wrapper {
@@ -63,6 +64,10 @@ import { BadgeModule } from 'primeng/badge';
                 margin: 0 auto;
             }
         }
+
+        ::ng-deep .p-connected-overlay {
+            z-index: 1100 !important;
+        }
     }
   `]
 })
@@ -79,12 +84,13 @@ export class MainLayout implements OnInit {
     { label: 'Analytics', icon: 'pi pi-chart-line', routerLink: '/analytics' }
   ];
 
-  userMenuItems: MenuItem[] = [
-    { label: 'Profile', icon: 'pi pi-user' },
-    { label: 'Settings', icon: 'pi pi-cog' },
-    { separator: true },
-    { label: 'Logout', icon: 'pi pi-sign-out', command: () => this.onLogout() }
-  ];
+  get userMenuItems(): MenuItem[] {
+    return [
+      { label: this.authService.getEmail() ?? '', icon: 'pi pi-envelope', styleClass: 'text-sm text-500 cursor-default' },
+      { separator: true },
+      { label: 'Logout', icon: 'pi pi-sign-out', command: () => this.onLogout() }
+    ];
+  }
 
   ngOnInit() {
     this.iotService.initializeData();
