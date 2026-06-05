@@ -2,7 +2,7 @@ import {DeviceType, DeviceStatus, AlertSeverity} from "../enums"
 
 export interface Location {
     rack: string;
-    position: string;
+    position: number;
     floor: number;
 }
 

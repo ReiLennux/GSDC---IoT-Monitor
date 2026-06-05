@@ -1,16 +1,16 @@
-import { IsString, IsEnum, IsOptional, IsNumber, ValidateNested, Min } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNumber, IsInt, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DeviceType, DeviceStatus } from '../../domain/enums';
 
 export class LocationDto {
   @IsString() rack!: string;
-  @IsString() position!: string;
+  @IsNumber() @IsInt() position!: number;
   @IsNumber() @Min(0) floor!: number;
 }
 
 export class PartialLocationDto {
   @IsOptional() @IsString() rack?: string;
-  @IsOptional() @IsString() position?: string;
+  @IsOptional() @IsNumber() @IsInt() position?: number;
   @IsOptional() @IsNumber() @Min(0) floor?: number;
 }
 
@@ -72,4 +72,6 @@ export class GetDeviceReadingsDto {
 
 export class GetDeviceAlertsDto {
   @IsString() deviceId!: string;
+  @IsOptional() @IsNumber() limit?: number;
+  @IsOptional() @IsString() cursor?: string;
 }
