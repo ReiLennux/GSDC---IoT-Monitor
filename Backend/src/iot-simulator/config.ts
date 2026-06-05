@@ -12,6 +12,8 @@ export const simConfig = {
   iotEndpoint: process.env.IOT_ENDPOINT || '',
   certPath: process.env.CERT_PATH || './certs/',
   backendUrl: process.env.BACKEND_URL || 'http://localhost:3000',
+  systemEmail: process.env.SIM_SYSTEM_EMAIL || 'system@iot.local',
+  systemPassword: process.env.SIM_SYSTEM_PASSWORD || 'System123!',
   adminEmail: process.env.SIM_ADMIN_EMAIL || 'admin@iot.local',
   adminPassword: process.env.SIM_ADMIN_PASSWORD || 'Admin123!',
   deviceBatchConcurrency: parseInt(process.env.DEVICE_BATCH_CONCURRENCY || '10', 10),

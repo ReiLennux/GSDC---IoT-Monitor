@@ -18,7 +18,7 @@ interface DeviceInput {
   plan: DevicePlan;
   rack: string;
   floor: number;
-  position: string;
+  position: number;
   deviceIndex: number;
 }
 
@@ -39,7 +39,7 @@ export class ApiClient {
     const res = await fetch(`${simConfig.backendUrl}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: simConfig.adminEmail, password: simConfig.adminPassword }),
+      body: JSON.stringify({ email: simConfig.systemEmail, password: simConfig.systemPassword }),
     });
 
     if (!res.ok) {
@@ -49,7 +49,7 @@ export class ApiClient {
     const data = await res.json() as { tokens: AuthTokens };
     this.accessToken = data.tokens.accessToken;
     this.refreshToken = data.tokens.refreshToken;
-    logger.info('Authenticated as admin');
+    logger.info('Authenticated as system');
   }
 
   private async refreshAuth(): Promise<void> {
@@ -83,7 +83,7 @@ export class ApiClient {
       for (let i = 0; i < count; i++) {
         const rack = RACKS[rackIndex % RACKS.length];
         const floor = FLOORS[deviceIndex % FLOORS.length];
-        const position = `U-${(deviceIndex % 42) + 1}`;
+        const position = (deviceIndex % 42) + 1;
 
         allDevices.push({ plan, rack, floor, position, deviceIndex });
         deviceIndex++;

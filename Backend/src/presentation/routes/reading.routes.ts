@@ -73,7 +73,7 @@ router.get('/', authenticate, controller.findAll);
  *       201:
  *         description: Readings stored
  */
-router.post('/batch', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR), validateDto(BatchReadingsDto), controller.createBatch);
+router.post('/batch', authenticate, authorize(UserRole.ADMIN, UserRole.OPERATOR, UserRole.SYSTEM), validateDto(BatchReadingsDto), controller.createBatch);
 
 /**
  * @openapi

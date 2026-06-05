@@ -13,5 +13,5 @@ export interface ReadingRepository extends BaseRepository<Reading> {
   findByDeviceId(deviceId: string, limit?: number, cursor?: string): Promise<PaginationResult<Reading>>;
   findAll(limit?: number, cursor?: string): Promise<PaginationResult<Reading>>;
   createBatch(readings: Reading[]): Promise<void>;
-  getAnalytics(hours: number): Promise<AnalyticsResult[]>;
+  getAnalytics(hours: number, deviceTypeMap?: Record<string, string>): Promise<AnalyticsResult[]>;
 }
