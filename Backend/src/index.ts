@@ -18,8 +18,6 @@ async function checkDatabase() {
   try {
     const client = new DynamoDBClient({
       region: env.awsRegion,
-      endpoint: env.dynamodbEndpoint,
-      credentials: { accessKeyId: env.awsAccessKeyId, secretAccessKey: env.awsSecretAccessKey },
     });
     await client.send(new DescribeTableCommand({ TableName: env.dynamodbTableName }));
     logger.info(`DynamoDB table "${env.dynamodbTableName}" ready`);

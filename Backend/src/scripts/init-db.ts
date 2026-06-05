@@ -16,12 +16,10 @@ import { UserRole } from '../domain/enums';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'IoT_Monitor_Table';
-const ENDPOINT = process.env.NODE_ENV === 'production' ? undefined : (process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000');
 const REGION = process.env.AWS_REGION || 'us-east-1';
 
 const client = new DynamoDBClient({
   region: REGION,
-  endpoint: ENDPOINT,
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
