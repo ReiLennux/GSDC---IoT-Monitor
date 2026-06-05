@@ -4,11 +4,7 @@ import { env } from '../../config/env';
 
 const client = new DynamoDBClient({
   region: env.awsRegion,
-  endpoint: env.dynamodbEndpoint,
-  credentials: {
-    accessKeyId: env.awsAccessKeyId,
-    secretAccessKey: env.awsSecretAccessKey,
-  },
+  endpoint: env.dynamodbEndpoint || undefined,
 });
 
 export const docClient = DynamoDBDocumentClient.from(client, {
