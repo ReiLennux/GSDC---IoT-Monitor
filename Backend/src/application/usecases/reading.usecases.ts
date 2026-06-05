@@ -32,7 +32,12 @@ export class ReadingUseCases extends BaseUseCase {
   }
 
   async analytics(dto: AnalyticsDto) {
-    return this.readingRepo.getAnalytics(dto.hours || 1);
+    const devices = (await this.deviceRepo.query({ limit: 500 })).data;
+    const deviceTypeMap: Record<string, string> = {};
+    for (const d of devices) {
+      deviceTypeMap[d.deviceId] = d.type;
+    }
+    return this.readingRepo.getAnalytics(dto.hours || 1, deviceTypeMap);
   }
 
   async publishBatch(dto: BatchReadingsDto) {
