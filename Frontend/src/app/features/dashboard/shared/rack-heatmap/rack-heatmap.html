@@ -14,19 +14,22 @@
 } @else {
   <div class="rack-grid">
     @for (rack of racks(); track rack.id) {
-      <div class="rack-card p-2 border-round border-1 surface-border surface-ground transition-all shadow-sm">
-        <div class="rack-card__title text-xs font-bold text-600 mb-2 border-bottom-1 surface-border pb-1 text-center">
-          Rack {{ rack.id }}
+      <div class="rack-card p-3 border-round border-1 surface-border transition-all shadow-sm">
+        <div class="flex align-items-center gap-2 mb-3 pb-2 border-bottom-1 surface-border">
+          <i class="pi pi-server text-primary text-lg"></i>
+          <span class="font-bold text-900">Rack {{ rack.id }}</span>
+          <span class="text-xs text-500 ml-auto">{{ rack.devices.length }} disp.</span>
         </div>
         <div class="rack-card__devices">
           @for (device of rack.devices; track device.deviceId) {
             <a
               [routerLink]="['/devices', device.deviceId]"
-              class="state-dot border-round no-underline"
+              class="device-dot border-round no-underline flex align-items-center justify-content-center border-1 surface-border transition-all"
               [ngClass]="getDeviceStatusClass(device.status)"
-              [pTooltip]="device.name + ' — ' + device.status"
+              [pTooltip]="device.name + ' · ' + device.type + ' · ' + ('online' === device.status ? 'Online' : 'offline' === device.status ? 'Offline' : 'critical' === device.status ? 'Crítico' : 'Mantenimiento')"
               tooltipPosition="top"
-            ></a>
+            >
+            </a>
           }
         </div>
       </div>

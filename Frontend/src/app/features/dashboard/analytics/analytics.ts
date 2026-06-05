@@ -43,24 +43,19 @@ export class Analytics implements OnInit {
   analyticsSummary = signal<AnalyticsUnitSummary[]>([]);
   trends = signal<DashboardTrends | null>(null);
   colorScheme = signal<Color>(this.buildColorScheme());
+  pieColorScheme = signal<Color>(this.buildPieColorScheme());
 
   rangeOptions = [
     { label: '24 horas', value: '24h' as RangeKey },
     { label: '7 días', value: '7d' as RangeKey },
   ];
 
-  lineChartData = computed(() => {
+  trendBarData = computed(() => {
     const trendData = this.trends()?.trends ?? [];
-    if (trendData.length === 0) {
-      return [{ name: 'Sin datos', series: [{ name: '-', value: 0 }] }];
-    }
+    if (trendData.length === 0) return [{ name: 'Sin datos', value: 0 }];
     return trendData.map((t) => ({
-      name: t.type,
-      series: [
-        { name: 'Mín', value: Math.round(t.min * 10) / 10 },
-        { name: 'Prom', value: Math.round(t.avg * 10) / 10 },
-        { name: 'Máx', value: Math.round(t.max * 10) / 10 },
-      ],
+      name: this.typeLabel(t.type),
+      value: Math.round(t.avg * 10) / 10,
     }));
   });
 
@@ -76,10 +71,22 @@ export class Analytics implements OnInit {
 
   summaryCards = computed(() => this.analyticsSummary());
 
+  pieChartData = computed(() => {
+    const devices = this.store.devices();
+    const counts: Record<string, number> = {};
+    devices.forEach(d => {
+      counts[d.type] = (counts[d.type] || 0) + 1;
+    });
+    const entries = Object.entries(counts).filter(([, v]) => v > 0);
+    if (!entries.length) return [{ name: 'Sin datos', value: 0 }];
+    return entries.map(([k, v]) => ({ name: this.typeLabel(k), value: v }));
+  });
+
   constructor() {
     effect(() => {
       this.themeService.isDark();
       this.colorScheme.set(this.buildColorScheme());
+      this.pieColorScheme.set(this.buildPieColorScheme());
     });
   }
 
@@ -112,9 +119,9 @@ export class Analytics implements OnInit {
   }
 
   exportCSV() {
-    const rows: string[] = ['unit,count,avg,min,max'];
+    const rows: string[] = ['type,count,avg,min,max'];
     this.analyticsSummary().forEach((r) => {
-      rows.push(`${r.unit},${r.count},${r.avg},${r.min},${r.max}`);
+      rows.push(`${r.type},${r.count},${r.avg},${r.min},${r.max}`);
     });
     const trends = this.trends();
     if (trends) {
@@ -132,12 +139,32 @@ export class Analytics implements OnInit {
     URL.revokeObjectURL(a.href);
   }
 
+  typeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      temperature: 'Temperatura',
+      humidity: 'Humedad',
+      power: 'Power',
+      ups: 'UPS',
+      cooling: 'Cooling',
+    };
+    return labels[type] || type;
+  }
+
   private buildColorScheme(): Color {
     return {
       name: 'analyticsScheme',
       selectable: true,
       group: ScaleType.Ordinal,
       domain: this.themeService.isDark() ? ['#FF4081', '#00BCD4', '#7C4DFF'] : ['#5AA454', '#A10A28', '#3B82F6'],
+    };
+  }
+
+  private buildPieColorScheme(): Color {
+    return {
+      name: 'pieScheme',
+      selectable: true,
+      group: ScaleType.Ordinal,
+      domain: ['#EF4444', '#3B82F6', '#F59E0B', '#8B5CF6', '#10B981'],
     };
   }
 }

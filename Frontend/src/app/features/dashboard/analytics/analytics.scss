@@ -4,13 +4,21 @@
 
 .chart-wrapper {
   width: 100%;
-  height: 320px;
-  min-height: 260px;
+  height: 350px;
+  min-height: 300px;
 
   ngx-charts-line-chart,
-  ngx-charts-bar-vertical {
+  ngx-charts-bar-vertical,
+  ngx-charts-bar-horizontal,
+  ngx-charts-pie-chart {
     display: block;
     width: 100%;
     height: 100%;
+  }
+}
+
+::ng-deep .chart-wrapper {
+  .chart-legend .legend-label-text {
+    font-size: 13px;
   }
 }

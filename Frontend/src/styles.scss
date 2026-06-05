@@ -22,10 +22,10 @@ body {
 /* Fix for ngx-charts text in dark mode */
 .my-app-dark {
     .ngx-charts {
-        text {
-            fill: var(--text-color);
-        }
+        text { fill: var(--p-text-color) !important; }
+        .tick text { fill: var(--p-text-muted-color) !important; }
     }
+    .chart-legend text { fill: var(--p-text-color) !important; }
 }
 
 /* Fix for heatmap rack cards */
