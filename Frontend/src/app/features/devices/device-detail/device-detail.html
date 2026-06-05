@@ -137,7 +137,12 @@
 
         <div class="grid mt-4">
             <div class="col-12">
-                <p-card header="Historial de Lecturas" styleClass="shadow-2">
+                <p-card styleClass="shadow-2">
+                    <ng-template pTemplate="header">
+                        <div class="flex px-3 pt-3">
+                            <span class="font-semibold text-lg">Historial de Lecturas</span>
+                        </div>
+                    </ng-template>
                     @if (historyLoading() && historyReadings().length === 0) {
                         <p-skeleton height="250px" styleClass="mb-3" />
                     } @else if (historyChartData()[0].series.length === 0) {
@@ -151,6 +156,7 @@
                                 [results]="historyChartData()"
                                 [xAxis]="true"
                                 [yAxis]="true"
+                                [legend]="false"
                                 [scheme]="colorScheme()"
                             />
                         </div>
@@ -159,6 +165,56 @@
                                 <p-button label="Cargar más" [text]="true" (click)="loadMore()" [loading]="historyLoading()" />
                             </div>
                         }
+                    }
+                </p-card>
+            </div>
+        </div>
+
+        <div class="grid mt-4">
+            <div class="col-12">
+                <p-card styleClass="shadow-2">
+                    <ng-template pTemplate="header">
+                        <div class="flex flex-wrap align-items-center justify-content-between px-3 pt-3">
+                            <span class="font-semibold text-lg">Alertas del Dispositivo</span>
+                            <p-button [text]="true" [label]="showResolved() ? 'Ocultar resueltas' : 'Mostrar resueltas'" icon="pi pi-filter" size="small" (click)="showResolved.set(!showResolved())" />
+                        </div>
+                    </ng-template>
+                    @if (alertsLoading()) {
+                        <p-skeleton height="200px" styleClass="mb-3" />
+                    } @else if (sortedAlerts().length === 0) {
+                        <div class="text-center text-500 text-sm py-5 px-3">No hay alertas para este dispositivo.</div>
+                    } @else {
+                        <div class="p-2">
+                            @for (alert of sortedAlerts(); track alert.alertId) {
+                                <div class="flex flex-wrap align-items-center gap-2 p-2 border-bottom-1 surface-border" [ngClass]="{'opacity-40': alert.resolvedAt}">
+                                    <p-tag [severity]="getAlertSeverity(alert.severity)" [value]="alert.severity" styleClass="text-xs w-6rem" />
+                                    <span class="text-sm font-medium flex-1 min-w-10rem">{{ alert.message }}</span>
+                                    <span class="text-xs text-500 w-8rem">{{ formatAlertTime(alert.createdAt) }}</span>
+                                    <span class="text-xs text-500 w-6rem">
+                                        @if (alert.resolvedAt) {
+                                            <i class="pi pi-check-circle text-green-500 mr-1"></i>Resuelta
+                                        } @else if (alert.acknowledged) {
+                                            <i class="pi pi-eye text-blue-500 mr-1"></i>Vista
+                                        } @else {
+                                            <i class="pi pi-exclamation-circle text-orange-500 mr-1"></i>Pendiente
+                                        }
+                                    </span>
+                                    @if (!alert.resolvedAt) {
+                                        <div class="flex gap-1">
+                                            @if (!alert.acknowledged) {
+                                                <p-button label="Visto" icon="pi pi-check" size="small" severity="secondary" (onClick)="acknowledge(alert.alertId)" />
+                                            }
+                                            <p-button label="Resolver" icon="pi pi-check-circle" size="small" severity="success" (onClick)="resolve(alert.alertId)" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            @if (alertsCursor()) {
+                                <div class="text-center mt-2">
+                                    <p-button label="Cargar más alertas" [text]="true" (click)="loadAlerts(false)" [loading]="alertsLoading()" />
+                                </div>
+                            }
+                        </div>
                     }
                 </p-card>
             </div>
