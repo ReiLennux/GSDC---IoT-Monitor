@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -21,6 +21,7 @@ import { AuthService } from '../../../core/auth';
     CardModule,
     MessageModule
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
   styleUrl: './login.scss'
 })
@@ -28,6 +29,7 @@ export class Login {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   error: string | null = null;
   loading = false;
@@ -42,14 +44,16 @@ export class Login {
       this.loading = true;
       this.error = null;
       
-      this.authService.login(this.loginForm.value as any).subscribe({
+      this.authService.login(this.loginForm.value as { email: string; password: string }).subscribe({
         next: () => {
           this.router.navigate(['/dashboard']);
         },
         error: (err) => {
           this.error = err.error?.error?.message || 'Login failed';
           this.loading = false;
-        }
+          this.cdr.markForCheck();
+        },
+        complete: () => this.cdr.markForCheck(),
       });
     }
   }

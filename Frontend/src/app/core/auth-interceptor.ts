@@ -48,9 +48,9 @@ const handle401Error = (
     refreshTokenSubject.next(null);
 
     return authService.refreshToken().pipe(
-      switchMap((res: any) => {
+      switchMap((res: { accessToken: string; refreshToken: string }) => {
         isRefreshing = false;
-        const newToken = res.accessToken || res.tokens?.accessToken;
+        const newToken = res.accessToken;
         console.log('Interceptor: Token refrescado exitosamente');
         refreshTokenSubject.next(newToken);
         return next(addToken(req, newToken));
