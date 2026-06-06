@@ -161,6 +161,46 @@ resource "aws_eip_association" "backend" {
   allocation_id = aws_eip.backend.id
 }
 
+# --- EC2 IoT GATEWAY ---
+resource "aws_security_group" "gateway" {
+  name   = "${var.project_name}-gateway-sg"
+  vpc_id = data.aws_vpc.default.id
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "gateway" {
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = var.instance_type
+  subnet_id              = data.aws_subnets.public.ids[0]
+  vpc_security_group_ids = [aws_security_group.gateway.id]
+  associate_public_ip_address = true
+  key_name               = var.ssh_key_name
+  user_data_replace_on_change = true
+
+  user_data = templatefile("${path.module}/files/setup-gateway.sh", {
+    git_repo_url       = var.git_repo_url
+    backend_ip         = aws_eip.backend.public_ip
+    sim_system_email   = var.sim_system_email
+    sim_system_password = var.sim_system_password
+  })
+
+  tags = { Name = "${var.project_name}-gateway" }
+}
+
 # --- API GATEWAY ---
 resource "aws_api_gateway_rest_api" "main" {
   name = "${var.project_name}-api"
