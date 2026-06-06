@@ -1,59 +1,182 @@
-# Frontend
+# GSDC IoT Monitor — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.8.
+Dashboard de monitoreo IoT en tiempo real construido con Angular 21 + PrimeNG.
 
-## Development server
+## Arquitectura
 
-To start a local development server, run:
+<img src="../assets/frontend/Frontend_diagrama.png" alt="Frontend Architecture Diagram">
 
-```bash
-ng serve
+## Capturas de Pantalla
+
+| Dashboard | Dispositivos | Detalle |
+|-----------|-------------|---------|
+| <img src="../assets/frontend/ss1.png" alt="Dashboard" width="400"> | <img src="../assets/frontend/ss2.png" alt="Dispositivos" width="400"> | <img src="../assets/frontend/ss3.png" alt="Detalle Dispositivo" width="400">
+
+| Alertas | Analytics |
+|---------|-----------|
+| <img src="../assets/frontend/ss4.png" alt="Alertas" width="400"> | <img src="../assets/frontend/ss5.png" alt="Analytics" width="400"> |
+
+## Estructura del Proyecto
+
+```
+Frontend/src/app/
+├── core/           # Servicios, modelos, guards, interceptors
+│   ├── models/     # Interfaces del dominio (Device, Alert, Reading)
+│   ├── directives/ # Directivas personalizadas (hasRole)
+│   ├── pipes/      # Pipes personalizados
+│   ├── auth.ts     # AuthService (login, logout, token storage)
+│   ├── device.ts   # DeviceService (CRUD + paginación)
+│   ├── iot.service.ts  # WebSocket + HTTP inicial
+│   ├── theme.service.ts # Tema oscuro/claro con localStorage
+│   └── dashboard.service.ts # Dashboard KPIs
+├── features/       # Módulos de funcionalidad (lazy loaded)
+│   ├── auth/       # Login
+│   ├── dashboard/  # Overview, KPIs, gráficas, rack heatmap
+│   ├── devices/    # CRUD, detalle con streaming, formulario
+│   ├── alerts/     # Lista filtrable de alertas
+│   └── main-layout/# Nav, menú, theme toggle
+└── state/          # DashboardStore (NgRx Signals)
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Stack
 
-## Code scaffolding
+| Capa               | Tecnología                                    |
+|-------------------|-----------------------------------------------|
+| Framework         | Angular 21                                    |
+| UI Library        | PrimeNG 21 + PrimeIcons + PrimeFlex            |
+| Gráficas          | @swimlane/ngx-charts (5 tipos)                 |
+| State Management  | @ngrx/signals                                  |
+| WebSocket Client  | socket.io-client                               |
+| HTTP Proxy        | proxy.conf.json (dev → localhost:3000)         |
+| TypeScript        | 5.9, strict mode, sin `any`                   |
+| Change Detection  | OnPush en todos los componentes                |
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Pantallas
 
-```bash
-ng generate component component-name
-```
+| Pantalla            | Ruta           | Funcionalidades                               |
+|--------------------|----------------|-----------------------------------------------|
+| Login              | `/login`       | Formulario reactivo, manejo de errores        |
+| Dashboard          | `/dashboard`   | KPIs, gráfica streaming, gauge temperatura, rack heatmap, feed alertas |
+| Dispositivos       | `/devices`     | CRUD, tabla filtrável, búsqueda debounce, paginación cursor-based |
+| Detalle Dispositivo| `/devices/:id` | Gráfica streaming en vivo, historial agrupado, estadísticas, alertas |
+| Alertas            | `/alerts`      | Lista filtrable (todas/pendientes/vistas/corregidas), reconocer/resolver |
+| Analytics          | `/analytics`   | Tendencias por tipo, heatmap por rack, exportar CSV |
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Prerrequisitos
 
-```bash
-ng generate --help
-```
+- Node.js 20+
+- npm 10+
+- Backend corriendo en `http://localhost:3000`
 
-## Building
+## Inicio Rápido
 
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### 1. Instalar dependencias
 
 ```bash
-ng e2e
+cd Frontend
+npm install
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### 2. Iniciar servidor de desarrollo
 
-## Additional Resources
+```bash
+npm start
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Frontend en `http://localhost:4200`. Las peticiones `/api/*` y `/socket.io/*` se redirigen al backend via proxy.
+
+### 3. Login
+
+Credenciales por defecto:
+
+| Rol    | Email               | Password     |
+|--------|---------------------|--------------|
+| Admin  | admin@iot.local     | Admin123!    |
+
+## Build para Producción
+
+```bash
+npm run build
+```
+
+El build se genera en `dist/frontend/browser/`. Servir con cualquier servidor estático (Nginx, S3 + CloudFront, etc.).
+
+### Ejemplo con Nginx
+
+```nginx
+server {
+    listen 80;
+    root /var/www/iot-monitor;
+    index index.html;
+    try_files $uri $uri/ /index.html;
+}
+```
+
+## Proxy de Desarrollo
+
+`proxy.conf.json` redirige al backend:
+
+```json
+{
+  "/api": { "target": "http://localhost:3000" },
+  "/socket.io": { "target": "http://localhost:3000", "ws": true }
+}
+```
+
+Para cambiar el backend en producción, configurar en el servidor Angular o usar variables de entorno al build.
+
+## Variables de Entorno
+
+El frontend no usa `.env`. La URL del backend se configura via:
+
+- **Desarrollo**: `proxy.conf.json`
+- **Producción**: servidor web (Nginx reverse proxy) o build-time con `--base-href`
+
+## Features Técnicas
+
+### Estado Global (NgRx Signals)
+
+`DashboardStore` gestiona:
+
+- Lista de dispositivos + total de registros
+- Alertas en memoria
+- Series de gráficas por dispositivo (streaming)
+- Series agregadas (temperatura promedio, humedad promedio)
+- Estado de carga
+
+### Tiempo Real (WebSocket)
+
+`IoTService` se conecta vía Socket.IO y maneja:
+
+| Evento              | Acción                               |
+|--------------------|--------------------------------------|
+| `device:reading`   | Actualiza valor + gráfica streaming  |
+| `device:status`    | Cambia estado en tabla y store       |
+| `alert:new`        | Agrega alerta + notificación sonora  |
+| `alert:resolved`   | Actualiza alerta existente           |
+
+### Paginación Cursor-Based
+
+Tanto dispositivos como alertas usan cursor-based pagination con `LastEvaluatedKey` de DynamoDB, codificado en base64. El frontend mantiene un array de cursores por página.
+
+### Seguridad
+
+- `AuthInterceptor`: adjunta JWT a todas las peticiones HTTP
+- `AuthGuard`: protege rutas, redirige a login si no hay sesión
+- `hasRole` directive: muestra/oculta elementos según rol del usuario
+- Rate limiting: el frontend muestra mensaje cuando el backend responde 429
+
+### Tema Oscuro/Claro
+
+`ThemeService` persiste la preferencia en `localStorage`. Usa variables CSS de PrimeNG Aura (`--p-*`), aplicando la clase `p-dark` al `<html>`.
+
+### Gráficas (ngx-charts)
+
+| Tipo                | Uso                                    |
+|--------------------|----------------------------------------|
+| Line Chart         | Streaming de lecturas en vivo          |
+| Gauge              | Temperatura actual + umbrales          |
+| Bar (vertical)     | Potencia por rack                      |
+| Bar (horizontal)   | Analytics agrupados por tipo           |
+| Pie                | Distribución de dispositivos por estado|
+| Heatmap            | Temperatura por rack/posición          |
