@@ -21,3 +21,15 @@ output "FRONTEND_CLOUDFRONT_URL" {
 output "S3_BUCKET_NAME" {
   value = aws_s3_bucket.frontend.id
 }
+
+output "IOT_ENDPOINT" {
+  value = data.aws_iot_endpoint.main.endpoint_address
+}
+
+output "WS_API_ENDPOINT" {
+  value = aws_apigatewayv2_api.ws.api_endpoint
+}
+
+output "LAMBDA_IOT_ARN" {
+  value = aws_lambda_function.iot_ingest.arn
+}
