@@ -8,7 +8,7 @@ services:
     volumes:
       - dynamodb-data:/home/dynamodblocal
     working_dir: /home/dynamodblocal
-    restart: always
+    restart: unless-stopped
     networks:
       - iot-network
 
@@ -18,10 +18,44 @@ services:
     ports:
       - "8001:8001"
     environment:
-      - DYNAMO_ENDPOINT=http://dynamodb-local:8000
+      DYNAMO_ENDPOINT: http://dynamodb-local:8000
     depends_on:
       - dynamodb-local
-    restart: always
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+  init-db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iot-init-db
+    environment:
+      NODE_ENV: development
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      DYNAMODB_TABLE_NAME: IoT_Monitor_Table
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      SIM_SYSTEM_EMAIL: system@iot.local
+      SIM_SYSTEM_PASSWORD: System123!
+    depends_on:
+      dynamodb-local:
+        condition: service_started
+    command: >
+      sh -c "
+        echo 'Waiting for DynamoDB...' &&
+        node -e \"
+          const http = require('http');
+          (function check() {
+            http.get('http://dynamodb-local:8000', r => process.exit(0))
+              .on('error', () => { setTimeout(check, 1000); });
+          })();
+        \" &&
+        echo 'Running db:init...' &&
+        node dist/scripts/init-db.js &&
+        echo 'Init complete'
+      "
     networks:
       - iot-network
 
@@ -33,14 +67,33 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
-      - JWT_SECRET=supersecretjwtkey_change_me_in_production
-      - JWT_REFRESH_SECRET=supersecretjwtrefreshkey_change_me_in_production
+      NODE_ENV: development
+      DYNAMODB_ENDPOINT: http://dynamodb-local:8000
+      DYNAMODB_TABLE_NAME: IoT_Monitor_Table
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      JWT_SECRET: supersecretjwtkey_change_me_in_production
+      JWT_REFRESH_SECRET: supersecretjwtrefreshkey_change_me_in_production
+      IOT_API_KEY: iot_local_dev_key
+      PORT: 3000
     depends_on:
-      - dynamodb-local
-    command: ["node", "dist/index.js"]
-    restart: always
+      dynamodb-local:
+        condition: service_started
+    command: >
+      sh -c "
+        echo 'Waiting for DynamoDB...' &&
+        node -e \"
+          const http = require('http');
+          (function check() {
+            http.get('http://dynamodb-local:8000', r => process.exit(0))
+              .on('error', () => { setTimeout(check, 1000); });
+          })();
+        \" &&
+        echo 'Starting API...' &&
+        node dist/index.js
+      "
+    restart: unless-stopped
     networks:
       - iot-network
 
@@ -50,18 +103,45 @@ services:
       dockerfile: Dockerfile
     container_name: iot-simulator
     environment:
-      - NODE_ENV=development
-      - MQTT_MODE=local
-      - BACKEND_URL=http://api:3000
-      - ACTIVE_DEVICES=500
-      - PUBLISH_INTERVAL_MS=5000
-      - ANOMALY_PROBABILITY=0.05
-      - SIM_ADMIN_EMAIL=admin@iot.local
-      - SIM_ADMIN_PASSWORD=Admin123!
+      NODE_ENV: development
+      MQTT_MODE: local
+      BACKEND_URL: http://api:3000
+      ACTIVE_DEVICES: 20
+      PUBLISH_INTERVAL_MS: 5000
+      ANOMALY_PROBABILITY: 0.05
+      SIM_SYSTEM_EMAIL: system@iot.local
+      SIM_SYSTEM_PASSWORD: System123!
     depends_on:
-      - api
-    command: ["node", "dist/iot-simulator/index.js"]
-    restart: always
+      api:
+        condition: service_started
+    command: >
+      sh -c "
+        echo 'Waiting for API...' &&
+        node -e \"
+          const http = require('http');
+          (function check() {
+            http.get('http://api:3000/health', r => { if (r.statusCode === 200) process.exit(0); else setTimeout(check, 2000); })
+              .on('error', () => { setTimeout(check, 2000); });
+          })();
+        \" &&
+        echo 'API ready, starting Simulator...' &&
+        node dist/iot-simulator/index.js
+      "
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+  frontend:
+    build:
+      context: ../Frontend
+      dockerfile: Dockerfile
+    container_name: iot-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
     networks:
       - iot-network
 
