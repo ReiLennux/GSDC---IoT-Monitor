@@ -2,6 +2,17 @@
 
 Plataforma de monitoreo en tiempo real para dispositivos IoT en centro de datos.
 
+## Video Demo
+
+[![Video Demo](https://img.youtube.com/vi/znXDLYthFg4/0.jpg)](https://youtu.be/znXDLYthFg4)
+
+## Demo en Vivo
+
+**Frontend:** http://iot-monitor-frontend-137583030560.s3-website-us-east-1.amazonaws.com  
+**Swagger:** http://100.51.1.187:3000/api-docs  
+
+**Credenciales:** `admin@iot.local` / `Admin123!`
+
 ## Repositorios
 
 | Componente | README                                         |
@@ -53,3 +64,4 @@ cd Backend && npm run simulator
 - [Especificación técnica](./PRUEBA_TECNICA.md)
 - [Auditoría de cumplimiento](./AUDITORIA.md)
 - [Plan de commits](./COMMITS.md)
+- [Colección Postman](./IoT%20Monitor%20API.postman_collection.json)
