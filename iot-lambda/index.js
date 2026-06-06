@@ -4,46 +4,38 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://100.51.1.187:3000';
 const IOT_API_KEY = process.env.IOT_API_KEY || '';
 
 exports.handler = async (event) => {
-  const readings = [];
+  console.log('IoT event received:', JSON.stringify(event).substring(0, 200));
 
-  for (const record of event.Records || []) {
-    try {
-      // IoT Core rule SELECT * FROM topic sends the raw MQTT payload
-      let body;
-      if (typeof record === 'string') {
-        body = JSON.parse(record);
-      } else if (record.data) {
-        // base64-encoded payload from older SQL versions
-        body = JSON.parse(Buffer.from(record.data, 'base64').toString('utf-8'));
-      } else {
-        // Direct object (newer SQL versions pass parsed JSON)
-        body = record;
+  // IoT Core rule with SQL 2016-03-23 sends payload directly, not wrapped in Records
+  let reading;
+  try {
+    if (event.deviceId) {
+      // Direct MQTT payload from SELECT *
+      reading = event;
+    } else if (event.Records) {
+      // Old format
+      const record = event.Records[0];
+      reading = typeof record === 'string' ? JSON.parse(record) : record;
+      if (reading.data) {
+        reading = JSON.parse(Buffer.from(reading.data, 'base64').toString('utf-8'));
       }
-
-      // Handle both direct properties and nested topic structure
-      const deviceId = body.deviceId || (body.topic ? body.topic.split('/')[2] : null);
-      if (!deviceId) continue;
-
-      readings.push({
-        deviceId,
-        value: Number(body.value),
-        unit: body.unit || '',
-        quality: body.quality || 'good',
-        timestamp: body.timestamp || new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error('Failed to parse IoT record:', err);
     }
+  } catch (err) {
+    console.error('Failed to parse IoT event:', err);
+    return { statusCode: 400, body: 'Invalid payload' };
   }
 
-  if (readings.length === 0) {
-    console.log('No valid readings to process');
-    return { statusCode: 200, body: 'OK (empty)' };
+  if (!reading || !reading.deviceId) {
+    console.log('No valid reading in event');
+    return { statusCode: 200, body: 'OK (no reading)' };
   }
 
-  const payload = JSON.stringify({ readings });
-  const url = new URL('/api/v1/readings/batch', BACKEND_URL);
+  reading.value = Number(reading.value);
+  reading.quality = reading.quality || 'good';
+  reading.timestamp = reading.timestamp || new Date().toISOString();
 
+  const url = new URL('/api/v1/readings/iot-ingest', BACKEND_URL);
+  const payload = JSON.stringify(reading);
   const options = {
     hostname: url.hostname,
     port: url.port || 3000,
@@ -62,8 +54,8 @@ exports.handler = async (event) => {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
-        console.log(`Backend responded: ${res.statusCode} — ${readings.length} readings`);
-        resolve({ statusCode: 200, body: `Processed ${readings.length} readings` });
+        console.log(`Backend responded: ${res.statusCode} - ${reading.deviceId} value=${reading.value}`);
+        resolve({ statusCode: 200, body: 'OK' });
       });
     });
 
