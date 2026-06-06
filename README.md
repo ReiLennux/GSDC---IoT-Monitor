@@ -18,6 +18,13 @@ Plataforma de monitoreo en tiempo real para dispositivos IoT en centro de datos.
 
 **Credenciales:** `admin@iot.local` / `Admin123!`
 
+**Instancias EC2:**
+
+| Nombre | IP | Rol |
+|--------|----|-----|
+| `gsdc-iot-monitor-backend` | `100.51.1.187` | API Express + Socket.IO + DynamoDB |
+| `gsdc-iot-monitor-gateway` | `13.218.159.179` | IoT Simulator Daemon (systemd) |
+
 ## Arquitectura AWS
 
 ```
