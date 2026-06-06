@@ -1,0 +1,8 @@
+node_modules
+dist
+terraform
+.git
+*.md
+.env
+terraform.tfvars
+terraform.tfvars.example

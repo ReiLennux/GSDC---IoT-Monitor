@@ -1,0 +1,37 @@
+services:
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: iot-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DYNAMODB_TABLE_NAME: ${DYNAMODB_TABLE_NAME}
+      AWS_REGION: ${AWS_REGION}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      IOT_API_KEY: ${IOT_API_KEY}
+      PORT: "3000"
+    restart: always
+
+  simulator:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: iot-simulator
+    environment:
+      NODE_ENV: production
+      MQTT_MODE: aws
+      BACKEND_URL: ${BACKEND_URL}
+      IOT_ENDPOINT: ${IOT_ENDPOINT}
+      CERT_PATH: /etc/iot-certs
+      ACTIVE_DEVICES: "20"
+      PUBLISH_INTERVAL_MS: "5000"
+      ANOMALY_PROBABILITY: "0.05"
+      SIM_SYSTEM_EMAIL: ${SIM_SYSTEM_EMAIL}
+      SIM_SYSTEM_PASSWORD: ${SIM_SYSTEM_PASSWORD}
+    volumes:
+      - /etc/iot-certs:/etc/iot-certs:ro
+    restart: always
