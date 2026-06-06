@@ -1,0 +1,8 @@
+aws_region           = "us-east-1"
+jwt_secret           = "changeme-super-secret-jwt-key-12345"
+jwt_refresh_secret   = "changeme-super-secret-jwt-refresh-key-67890"
+sim_system_password  = "System123!"
+iot_api_key          = "changeme-iot-api-key-abc123"
+git_repo_url         = "https://github.com/YOUR_USER/iot-monitor.git"
+ssh_key_name         = null
+instance_type        = "t3.micro"
