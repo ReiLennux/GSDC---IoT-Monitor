@@ -17,6 +17,7 @@ import { ThemeService } from '../../../core/theme.service';
 import { Device } from '../../../core/models/device.model';
 import { Reading } from '../../../core/models/reading.model';
 import { Alert } from '../../../core/models/alert.model';
+import { HasRoleDirective } from '../../../core/directives/has-role.directive';
 
 interface ChartDataModel {
   name: string;
@@ -97,7 +98,7 @@ function groupReadings(readings: Reading[], groupBy: GroupBy): ChartDataModel[] 
 @Component({
   selector: 'app-device-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, NgxChartsModule, CardModule, PanelModule, ButtonModule, TagModule, SkeletonModule],
+  imports: [CommonModule, RouterLink, NgxChartsModule, CardModule, PanelModule, ButtonModule, TagModule, SkeletonModule, HasRoleDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './device-detail.html',
   styles: [`.opacity-40 { opacity: 0.4; }`],

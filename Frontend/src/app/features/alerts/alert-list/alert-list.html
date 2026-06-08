@@ -26,7 +26,7 @@
                 <td>{{ alert.message }}</td>
                 <td>
                     @if (!alert.resolvedAt) {
-                        <div class="flex gap-2">
+                        <div class="flex gap-2" *hasRole="['admin','operator']">
                             @if (!alert.acknowledged) {
                                 <p-button label="Visto" icon="pi pi-check" size="small" severity="secondary" (onClick)="acknowledge(alert.alertId)"></p-button>
                             }

@@ -1,18 +1,25 @@
-import { Directive, Input, TemplateRef, ViewContainerRef, inject, OnInit, OnDestroy } from '@angular/core';
+import { Directive, Input, TemplateRef, ViewContainerRef, inject, OnInit, effect } from '@angular/core';
 import { AuthService } from '../auth';
-import { Subscription } from 'rxjs';
 
 @Directive({
   selector: '[hasRole]',
   standalone: true
 })
-export class HasRoleDirective implements OnInit, OnDestroy {
+export class HasRoleDirective implements OnInit {
   private templateRef = inject(TemplateRef<unknown>);
   private viewContainer = inject(ViewContainerRef);
   private authService = inject(AuthService);
-  private subscription = new Subscription();
 
   @Input('hasRole') allowedRoles: string[] = [];
+
+  private hasView = false;
+
+  constructor() {
+    effect(() => {
+      this.authService.getRole();
+      this.updateView();
+    });
+  }
 
   ngOnInit() {
     this.updateView();
@@ -20,14 +27,13 @@ export class HasRoleDirective implements OnInit, OnDestroy {
 
   private updateView() {
     const userRole = this.authService.getRole();
-    if (userRole && this.allowedRoles.includes(userRole)) {
+    const allowed = !!userRole && this.allowedRoles.includes(userRole);
+    if (allowed && !this.hasView) {
       this.viewContainer.createEmbeddedView(this.templateRef);
-    } else {
+      this.hasView = true;
+    } else if (!allowed && this.hasView) {
       this.viewContainer.clear();
+      this.hasView = false;
     }
-  }
-
-  ngOnDestroy() {
-    this.subscription.unsubscribe();
   }
 }

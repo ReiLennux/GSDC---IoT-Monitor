@@ -10,11 +10,12 @@ import { DashboardStore } from '../../../state/dashboard.store';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { Alert } from '../../../core/models/alert.model';
+import { HasRoleDirective } from '../../../core/directives/has-role.directive';
 
 @Component({
   selector: 'app-alert-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TableModule, TagModule, ButtonModule, SelectButtonModule],
+  imports: [CommonModule, FormsModule, RouterLink, TableModule, TagModule, ButtonModule, SelectButtonModule, HasRoleDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './alert-list.html',
   styles: [`

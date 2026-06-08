@@ -26,7 +26,7 @@
                             placeholder="Buscar dispositivos..." />
                     </p-iconField>
                     <p-button label="Nuevo" icon="pi pi-plus" size="small" severity="success" (onClick)="openNew()"
-                        *hasRole="['admin']"></p-button>
+                        *hasRole="['admin','operator']"></p-button>
                 </div>
             </div>
         </ng-template>
@@ -74,9 +74,9 @@
                         <p-button icon="pi pi-eye" label="Ver" severity="secondary" [text]="true" size="small"
                             [routerLink]="['/devices', device.deviceId]"></p-button>
                         <p-button icon="pi pi-pencil" label="Editar" severity="info" [text]="true" size="small"
-                            (onClick)="editDevice(device)"></p-button>
+                            (onClick)="editDevice(device)" *hasRole="['admin','operator']"></p-button>
                         <p-button icon="pi pi-trash" label="Eliminar" severity="danger" [text]="true" size="small"
-                            (onClick)="deleteDevice(device)"></p-button>
+                            (onClick)="deleteDevice(device)" *hasRole="['admin']"></p-button>
                     </div>
                 </td>
             </tr>
