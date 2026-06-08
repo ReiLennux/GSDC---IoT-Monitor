@@ -23,7 +23,7 @@ Plataforma de monitoreo en tiempo real para dispositivos IoT en centro de datos.
 | Nombre | IP | Rol |
 |--------|----|-----|
 | `gsdc-iot-monitor-backend` | `100.51.1.187` | API Express + Socket.IO + DynamoDB |
-| `gsdc-iot-monitor-gateway` | `32.197.42.74` | IoT Simulator Daemon (systemd) |
+| `gsdc-iot-monitor-gateway` | `32.197.47.108` | IoT Simulator MQTT Daemon (systemd) |
 
 ## Arquitectura AWS
 
