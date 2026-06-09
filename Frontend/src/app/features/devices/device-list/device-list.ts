@@ -76,6 +76,12 @@ export class DeviceList implements OnInit, OnDestroy {
   deviceDialog = signal(false);
   editingDevice = signal<Device | null>(null);
 
+  statusOptions = [
+    { label: 'Online', value: 'online' },
+    { label: 'Offline', value: 'offline' },
+    { label: 'Maintenance', value: 'maintenance' },
+  ];
+
   ngOnInit() {
     this.statusFilter = this.route.snapshot.queryParamMap.get('status');
 
@@ -235,6 +241,29 @@ export class DeviceList implements OnInit, OnDestroy {
     this.typeFilter.set(type);
     this.lastLazyEvent = { ...this.lastLazyEvent, first: 0 };
     this.loadDevicesLazy();
+  }
+
+  onStatusChange(device: Device, newStatus: string) {
+    if (device.status === newStatus) return;
+    this.deviceService.updateStatus(device.deviceId, newStatus).subscribe({
+      next: (updated) => {
+        this.devices.update(list => list.map(d =>
+          d.deviceId === device.deviceId ? { ...d, status: updated.status } : d
+        ));
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Estado actualizado',
+          detail: `${device.name} → ${newStatus}`,
+        });
+        this.cdr.markForCheck();
+      },
+      error: () =>
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo actualizar el estado',
+        }),
+    });
   }
 
   getSeverity(status: string) {

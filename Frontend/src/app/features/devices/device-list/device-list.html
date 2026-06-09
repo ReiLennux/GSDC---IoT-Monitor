@@ -77,6 +77,10 @@
                             (onClick)="editDevice(device)" *hasRole="['admin','operator']"></p-button>
                         <p-button icon="pi pi-trash" label="Eliminar" severity="danger" [text]="true" size="small"
                             (onClick)="deleteDevice(device)" *hasRole="['admin']"></p-button>
+                        <p-select [options]="statusOptions" optionLabel="label" optionValue="value"
+                            [ngModel]="device.status" (ngModelChange)="onStatusChange(device, $event)"
+                            *hasRole="['admin','operator']" styleClass="w-8rem" [style]="{fontSize:'0.8rem'}">
+                        </p-select>
                     </div>
                 </td>
             </tr>
