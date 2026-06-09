@@ -45,7 +45,7 @@ export class DeviceController {
 
   updateStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const device = await this.uc.updateStatus({ id: req.params.id as string, ...req.body });
+      const device = await this.uc.updateStatus({ ...req.body, id: req.params.id as string });
       res.json(device);
     } catch (err) { next(err); }
   };
