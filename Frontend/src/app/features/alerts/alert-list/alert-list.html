@@ -1,11 +1,12 @@
 <div class="card shadow-1 p-4 surface-card border-round">
-    <div class="flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div class="flex flex-column sm:flex-row align-items-start sm:align-items-center justify-content-between gap-2 mb-4">
       <h3 class="text-xl font-bold m-0">Gestión de Alertas</h3>
       <p-selectButton
         [options]="filterOptions"
         [(ngModel)]="filter"
         optionLabel="label"
         optionValue="value"
+        [allowEmpty]="false"
       />
     </div>
     <p-table [value]="filteredAlerts()" [paginator]="true" [rows]="10" dataKey="alertId">
