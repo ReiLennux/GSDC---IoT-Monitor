@@ -15,10 +15,11 @@ const controller = new ReadingController(readingUseCases);
 router.post('/iot-ingest', async (req: Request, res: Response, next: NextFunction) => {
   logger.info(`/iot-ingest received: ${JSON.stringify(req.body).substring(0, 500)}`);
 
-  if (req.body?.ConfirmationToken) {
-    logger.info(`=== IOT CONFIRMATION TOKEN: ${req.body.ConfirmationToken} ===`);
+  const destinationToken = req.body?.confirmationToken || req.body?.ConfirmationToken;
+  if (destinationToken) {
+    logger.info(`=== IOT CONFIRMATION TOKEN: ${destinationToken} ===`);
     try {
-      await fetch(`https://iot.us-east-1.amazonaws.com/destinations/confirm?confirmationToken=${encodeURIComponent(req.body.ConfirmationToken)}`, { method: 'GET' });
+      await fetch(`https://iot.us-east-1.amazonaws.com/destinations/confirm?confirmationToken=${encodeURIComponent(destinationToken)}`, { method: 'GET' });
       logger.info('IoT destination confirmation attempted');
     } catch (err) {
       logger.error('IoT destination confirmation failed', err);
