@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { logger } from '../../utils/logger';
 import { ReadingController } from '../controllers/reading.controller';
 import { readingUseCases } from '../../container';
 import { BatchReadingsDto } from '../../application/dtos';
@@ -12,15 +13,15 @@ const router = Router();
 const controller = new ReadingController(readingUseCases);
 
 router.post('/iot-ingest', async (req: Request, res: Response, next: NextFunction) => {
+  logger.info(`/iot-ingest received: ${JSON.stringify(req.body).substring(0, 500)}`);
+
   if (req.body?.ConfirmationToken) {
-    console.log('=== IOT DESTINATION CONFIRMATION TOKEN ===');
-    console.log(req.body.ConfirmationToken);
-    console.log('=== COPY PASTE THIS TOKEN IN AWS CONSOLE ===');
+    logger.info(`=== IOT CONFIRMATION TOKEN: ${req.body.ConfirmationToken} ===`);
     try {
       await fetch(`https://iot.us-east-1.amazonaws.com/destinations/confirm?confirmationToken=${encodeURIComponent(req.body.ConfirmationToken)}`, { method: 'GET' });
-      console.log('IoT destination confirmation attempted');
+      logger.info('IoT destination confirmation attempted');
     } catch (err) {
-      console.error('IoT destination confirmation failed:', err);
+      logger.error('IoT destination confirmation failed', err);
     }
     return res.status(200).send('OK');
   }
