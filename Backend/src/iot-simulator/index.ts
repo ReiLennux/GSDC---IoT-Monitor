@@ -19,7 +19,16 @@ async function main() {
 
   await api.login();
 
-  const devices = await api.registerDevices();
+  let devices;
+  if (simConfig.registerDevices) {
+    devices = await api.registerDevices();
+  } else {
+    devices = await api.fetchDevices();
+    if (devices.length === 0) {
+      logger.info('No devices found, registering new ones...');
+      devices = await api.registerDevices();
+    }
+  }
   simulator.setDevices(devices);
   logger.info(`Simulating ${simulator.getDevices().length} registered devices`);
 

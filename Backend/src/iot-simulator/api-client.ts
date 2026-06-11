@@ -119,6 +119,19 @@ export class ApiClient {
     return this.devices;
   }
 
+  async fetchDevices(): Promise<RegisteredDevice[]> {
+    logger.info('Fetching existing devices...');
+    const res = await fetch(`${simConfig.backendUrl}/api/v1/devices?limit=500`, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
+    });
+    if (!res.ok) throw new Error(`Fetch devices failed: ${res.status}`);
+    const data = await res.json() as { data: Array<{ deviceId: string; type: string }> };
+    const devices = (data.data || []).map((d) => ({ id: d.deviceId, type: d.type as DeviceType }));
+    this.devices = devices;
+    logger.info(`Fetched ${devices.length} existing devices`);
+    return devices;
+  }
+
   async publishBatch(readings: SimulatedReading[]): Promise<void> {
     const doPublish = async () => {
       const res = await fetch(`${simConfig.backendUrl}/api/v1/readings/batch`, {

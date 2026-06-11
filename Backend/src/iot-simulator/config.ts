@@ -17,4 +17,5 @@ export const simConfig = {
   adminEmail: process.env.SIM_ADMIN_EMAIL || 'admin@iot.local',
   adminPassword: process.env.SIM_ADMIN_PASSWORD || 'Admin123!',
   deviceBatchConcurrency: parseInt(process.env.DEVICE_BATCH_CONCURRENCY || '10', 10),
+  registerDevices: process.env.REGISTER_DEVICES !== 'false',
 };
