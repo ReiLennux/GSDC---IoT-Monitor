@@ -12,25 +12,18 @@ Plataforma de monitoreo en tiempo real para dispositivos IoT en centro de datos.
 
 **Credenciales:** `admin@iot.local` / `Admin123!`
 
-**Instancias EC2:**
-
-| Nombre | IP | Rol |
-|--------|----|-----|
-| `gsdc-iot-monitor-backend` | `100.51.1.187` | API Express + Socket.IO + DynamoDB |
-| `gsdc-iot-monitor-gateway` | `32.197.47.108` | IoT Simulator MQTT Daemon (systemd) |
-
 ## Arquitectura AWS
 
 ```
 ┌──────────────────┐    MQTT/TLS     ┌──────────┐    IoT Rule     ┌──────────────┐
-│ EC2 IoT Gateway  │───────────────▶│ IoT Core │───────────────▶│   Lambda     │
-│ (Simulador)      │  (X.509 certs) │          │                │ (Node.js 20) │
+│ EC2 Simulador    │───────────────▶│ IoT Core │───────────────▶│   Lambda     │
+│ (aws-iot-sdk)    │  (X.509 certs) │          │                │ (Node.js 20) │
 └──────────────────┘                └──────────┘                └──────┬───────┘
                                                                        │
                             ┌──────────────────────────────────────────┼───────┐
                             │            ┌────────────────┐           │       │
                             │    HTTP    │ API Gateway    │◀─── HTTP          │
-                            │◀───────────│ (REST + WS)   │                   │
+                            │◀───────────│ (REST)        │                   │
                             │            └────────────────┘                   │
                             ▼                                                 ▼
                    ┌────────────────┐                              ┌──────────────┐
@@ -43,13 +36,12 @@ Plataforma de monitoreo en tiempo real para dispositivos IoT en centro de datos.
 |-------------|---------|
 | DynamoDB | `IoT_Monitor_Table` (single-table, 2 GSIs, TTL) |
 | EC2 Backend | `gsdc-iot-monitor-backend` (t3.micro, systemd) |
-| EC2 Gateway | `gsdc-iot-monitor-gateway` (simulador como demonio) |
+| EC2 Simulador | `gsdc-iot-monitor-simulator` (demonio systemd) |
 | API Gateway REST | `gsdc-iot-monitor-api` (HTTP proxy → EC2) |
-| API Gateway WS | `gsdc-iot-ws` (WebSocket proxy → EC2 Socket.IO) |
-| S3 | `iot-monitor-frontend-*` (website hosting) |
-| CloudFront | `d574amddekt52.cloudfront.net` (CDN global) |
-| IoT Core | Thing + Cert X.509 + Policy + Topic Rule |
-| Lambda | `gsdc-iot-ingest` (recibe IoT Core → persiste en DynamoDB) |
+| S3 + CloudFront | `iot-monitor-frontend-*` + `d574amddekt52.cloudfront.net` |
+| IoT Core | Thing `gsdc-iot-gateway` + Cert X.509 + Policy |
+| IoT Rule | `gsdc_iot_telemetry` → Lambda |
+| Lambda | `gsdc-iot-rule-test` (bridge IoT Core → Backend) |
 | IAM | Roles EC2 + Lambda con permisos DynamoDB |
 
 ## Repositorios
@@ -87,16 +79,6 @@ cd Backend && npm run simulator
 
 - Frontend: http://localhost:4200
 - API + Swagger: http://localhost:3000/api-docs
-
-## Arquitectura
-
-### Backend
-
-<img src="./assets/backend/Backend_diagrama.png" alt="Backend Architecture" width="800">
-
-### Frontend
-
-<img src="./assets/frontend/Frontend_diagrama.png" alt="Frontend Architecture" width="800">
 
 ## Documentación
 

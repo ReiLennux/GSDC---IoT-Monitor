@@ -4,7 +4,23 @@ Dashboard de monitoreo IoT en tiempo real construido con Angular 21 + PrimeNG.
 
 ## Arquitectura
 
-<img src="../assets/frontend/Frontend_diagrama.png" alt="Frontend Architecture Diagram">
+```
+┌──────────────────┐    MQTT/TLS     ┌──────────┐    IoT Rule     ┌──────────────┐
+│ EC2 Simulador    │───────────────▶│ IoT Core │───────────────▶│   Lambda     │
+│ (aws-iot-sdk)    │  (X.509 certs) │          │                │ (Node.js 20) │
+└──────────────────┘                └──────────┘                └──────┬───────┘
+                                                                       │
+                            ┌──────────────────────────────────────────┼───────┐
+                            │            ┌────────────────┐           │       │
+                            │    HTTP    │ API Gateway    │◀─── HTTP          │
+                            │◀───────────│ (REST)        │                   │
+                            │            └────────────────┘                   │
+                            ▼                                                 ▼
+                   ┌────────────────┐                              ┌──────────────┐
+                   │ CloudFront CDN │                              │  DynamoDB    │
+                   │ (S3 origin)    │                              │ (GSIs + TTL) │
+                   └────────────────┘                              └──────────────┘
+```
 
 ## Capturas de Pantalla
 

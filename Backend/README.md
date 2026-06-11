@@ -4,8 +4,23 @@ API REST + WebSocket para monitoreo IoT en tiempo real.
 
 ## Arquitectura
 
-<img src="../assets/backend/Backend_diagrama.png" alt="Backend Architecture Diagram">
-
+```
+┌──────────────────┐    MQTT/TLS     ┌──────────┐    IoT Rule     ┌──────────────┐
+│ EC2 Simulador    │───────────────▶│ IoT Core │───────────────▶│   Lambda     │
+│ (aws-iot-sdk)    │  (X.509 certs) │          │                │ (Node.js 20) │
+└──────────────────┘                └──────────┘                └──────┬───────┘
+                                                                       │
+                            ┌──────────────────────────────────────────┼───────┐
+                            │            ┌────────────────┐           │       │
+                            │    HTTP    │ API Gateway    │◀─── HTTP          │
+                            │◀───────────│ (REST)        │                   │
+                            │            └────────────────┘                   │
+                            ▼                                                 ▼
+                   ┌────────────────┐                              ┌──────────────┐
+                   │ CloudFront CDN │                              │  DynamoDB    │
+                   │ (S3 origin)    │                              │ (GSIs + TTL) │
+                   └────────────────┘                              └──────────────┘
+```
 
 ## Estructura
 
