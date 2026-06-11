@@ -15,7 +15,7 @@ import {
 } from '../../../core/dashboard.service';
 import { RackMapCardComponent } from '../shared/rack-map-card/rack-map-card';
 
-type RangeKey = '24h' | '7d';
+type RangeKey = '1h' | '24h' | '7d' | '30d' | 'all';
 
 @Component({
   selector: 'app-analytics',
@@ -48,8 +48,11 @@ export class Analytics implements OnInit {
   pieColorScheme = signal<Color>(this.buildPieColorScheme());
 
   rangeOptions = [
+    { label: '1 hora', value: '1h' as RangeKey },
     { label: '24 horas', value: '24h' as RangeKey },
     { label: '7 días', value: '7d' as RangeKey },
+    { label: '30 días', value: '30d' as RangeKey },
+    { label: 'Todo', value: 'all' as RangeKey },
   ];
 
   trendBarData = computed(() => {
@@ -103,8 +106,10 @@ export class Analytics implements OnInit {
 
   loadData() {
     this.loading.set(true);
-    const hours = this.range() === '24h' ? 24 : 168;
-    const days = this.range() === '24h' ? 1 : 7;
+    const hoursMap: Record<RangeKey, number> = { '1h': 1, '24h': 24, '7d': 168, '30d': 720, 'all': 0 };
+    const hours = hoursMap[this.range()];
+    const daysMap: Record<RangeKey, number> = { '1h': 1, '24h': 1, '7d': 7, '30d': 30, 'all': 365 };
+    const days = daysMap[this.range()];
 
     this.dashboardService.getAnalytics(hours).subscribe({
       next: (data) => {

@@ -83,26 +83,37 @@ export class ReadingDynamoRepository
     }
 
     async getAnalytics(hours: number, deviceTypeMap?: Record<string, string>): Promise<AnalyticsResult[]> {
-        const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+        const since = hours > 0
+            ? new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
+            : null;
 
-        const result = await docClient.send(new ScanCommand({
-            TableName: env.dynamodbTableName,
-            FilterExpression: 'begins_with(SK, :prefix) AND SK >= :since',
-            ExpressionAttributeValues: {
-                ':prefix': 'READING#',
-                ':since': `READING#${since}`,
-            },
-        }));
+        const filterExp = since
+            ? 'begins_with(SK, :prefix) AND SK >= :since'
+            : 'begins_with(SK, :prefix)';
+        const exprValues: Record<string, string> = { ':prefix': 'READING#' };
+        if (since) exprValues[':since'] = `READING#${since}`;
 
-        const readings = (result.Items || []).map(item => this.fromPersistence(item));
         const byType: Record<string, { values: number[]; count: number }> = {};
+        let lastEvaluatedKey: Record<string, unknown> | undefined;
 
-        for (const r of readings) {
-            const key = deviceTypeMap?.[r.deviceId] ?? r.type ?? r.unit;
-            if (!byType[key]) byType[key] = { values: [], count: 0 };
-            byType[key].values.push(r.value);
-            byType[key].count++;
-        }
+        do {
+            const result = await docClient.send(new ScanCommand({
+                TableName: env.dynamodbTableName,
+                FilterExpression: filterExp,
+                ExpressionAttributeValues: exprValues,
+                ExclusiveStartKey: lastEvaluatedKey,
+            }));
+
+            const readings = (result.Items || []).map(item => this.fromPersistence(item));
+            for (const r of readings) {
+                const key = deviceTypeMap?.[r.deviceId] ?? r.type ?? r.unit;
+                if (!byType[key]) byType[key] = { values: [], count: 0 };
+                byType[key].values.push(r.value);
+                byType[key].count++;
+            }
+
+            lastEvaluatedKey = result.LastEvaluatedKey;
+        } while (lastEvaluatedKey);
 
         return Object.entries(byType).map(([type, data]) => {
             const sorted = [...data.values].sort((a, b) => a - b);
