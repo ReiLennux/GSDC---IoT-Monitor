@@ -12,6 +12,17 @@ const router = Router();
 const controller = new ReadingController(readingUseCases);
 
 router.post('/iot-ingest', async (req: Request, res: Response, next: NextFunction) => {
+  if (req.body?.SubscribeURL) {
+    try {
+      await fetch(req.body.SubscribeURL);
+      console.log('IoT Core destination confirmed via SubscribeURL');
+      return res.status(200).send('OK');
+    } catch (err) {
+      console.error('Failed to confirm IoT destination:', err);
+      return res.status(500).send('Confirmation failed');
+    }
+  }
+
   const key = req.headers['x-api-key'] as string | undefined;
   if (env.iotApiKey && key !== env.iotApiKey) {
     return res.status(401).json({ error: 'Invalid API key' });
