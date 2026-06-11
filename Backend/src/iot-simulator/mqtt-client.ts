@@ -1,10 +1,10 @@
-import mqtt, { MqttClient as MqttJsClient } from 'mqtt';
+import { device } from 'aws-iot-device-sdk';
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger';
 
 export class MqttClient {
-  private client: MqttJsClient | null = null;
+  private client: ReturnType<typeof device> | null = null;
   private connected = false;
 
   constructor(
@@ -21,37 +21,37 @@ export class MqttClient {
     const cert = fs.readFileSync(certPath_);
     const key = fs.readFileSync(keyPath);
 
-    const url = `mqtts://${this.endpoint}:8883`;
+    const clientId = `iot-gateway-${Math.random().toString(36).substring(2, 10)}`;
+
+    this.client = device({
+      host: this.endpoint,
+      clientId,
+      protocol: 'mqtts',
+      port: 8883,
+      caCert: ca,
+      clientCert: cert,
+      privateKey: key,
+      debug: false,
+    });
 
     return new Promise((resolve, reject) => {
-      this.client = mqtt.connect(url, {
-        ca,
-        cert,
-        key,
-        clientId: `iot-gateway-${Math.random().toString(36).substring(2, 10)}`,
-        rejectUnauthorized: true,
-        clean: true,
-        protocolVersion: 4,
-        keepalive: 30,
-      });
-
-      this.client.on('connect', () => {
+      this.client!.on('connect', () => {
         this.connected = true;
         logger.info(`MQTT connected to ${this.endpoint}`);
         resolve();
       });
 
-      this.client.on('error', (err) => {
+      this.client!.on('error', (err: Error) => {
         logger.error('MQTT error', err);
         if (!this.connected) reject(err);
       });
 
-      this.client.on('close', () => {
+      this.client!.on('close', () => {
         this.connected = false;
         logger.warn('MQTT disconnected');
       });
 
-      this.client.on('offline', () => {
+      this.client!.on('offline', () => {
         this.connected = false;
         logger.warn('MQTT offline');
       });
@@ -68,13 +68,12 @@ export class MqttClient {
     }
 
     return new Promise((resolve, reject) => {
-      const msg = JSON.stringify(payload);
-      this.client!.publish(topic, msg, { qos }, (err, packet) => {
+      this.client!.publish(topic, JSON.stringify(payload), { qos }, (err?: Error) => {
         if (err) {
           logger.error(`MQTT publish failed: ${topic}`, err);
           reject(err);
         } else {
-          logger.debug(`MQTT published to ${topic} (qos=${qos}, cmd=${packet?.cmd})`);
+          logger.debug(`MQTT published to ${topic}`);
           resolve();
         }
       });
