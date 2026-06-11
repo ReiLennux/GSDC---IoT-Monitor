@@ -31,6 +31,8 @@ export class MqttClient {
         clientId: `iot-gateway-${Math.random().toString(36).substring(2, 10)}`,
         rejectUnauthorized: true,
         clean: true,
+        protocolVersion: 4,
+        keepalive: 30,
       });
 
       this.client.on('connect', () => {
@@ -66,9 +68,15 @@ export class MqttClient {
     }
 
     return new Promise((resolve, reject) => {
-      this.client!.publish(topic, JSON.stringify(payload), { qos }, (err) => {
-        if (err) reject(err);
-        else resolve();
+      const msg = JSON.stringify(payload);
+      this.client!.publish(topic, msg, { qos }, (err, packet) => {
+        if (err) {
+          logger.error(`MQTT publish failed: ${topic}`, err);
+          reject(err);
+        } else {
+          logger.debug(`MQTT published to ${topic} (qos=${qos}, cmd=${packet?.cmd})`);
+          resolve();
+        }
       });
     });
   }
