@@ -11,14 +11,32 @@ const router = Router();
 
 const controller = new ReadingController(readingUseCases);
 
-router.post('/iot-ingest', (req: Request, res: Response, next: NextFunction) => {
+router.post('/iot-ingest', async (req: Request, res: Response, next: NextFunction) => {
   const key = req.headers['x-api-key'] as string | undefined;
   if (env.iotApiKey && key !== env.iotApiKey) {
     return res.status(401).json({ error: 'Invalid API key' });
   }
-  const body = { readings: [req.body] };
-  req.body = body;
-  next();
+
+  try {
+    if (req.body && Object.keys(req.body).length > 0) {
+      req.body = { readings: [req.body] };
+    } else {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(Buffer.from(chunk));
+      }
+      const raw = Buffer.concat(chunks).toString('utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        req.body = { readings: parsed };
+      } else {
+        req.body = { readings: [parsed] };
+      }
+    }
+    next();
+  } catch {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
 }, controller.createBatch);
 
 /**
