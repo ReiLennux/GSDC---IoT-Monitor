@@ -73,7 +73,7 @@ export class MqttClient {
           logger.error(`MQTT publish failed: ${topic}`, err);
           reject(err);
         } else {
-          logger.debug(`MQTT published to ${topic}`);
+          logger.info(`MQTT published to ${topic} (qos=${qos})`);
           resolve();
         }
       });
