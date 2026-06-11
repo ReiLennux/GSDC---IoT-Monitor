@@ -22,16 +22,6 @@ Dashboard de monitoreo IoT en tiempo real construido con Angular 21 + PrimeNG.
                    └────────────────┘                              └──────────────┘
 ```
 
-## Capturas de Pantalla
-
-| Dashboard | Dispositivos | Detalle |
-|-----------|-------------|---------|
-| <img src="../assets/frontend/ss1.png" alt="Dashboard" width="400"> | <img src="../assets/frontend/ss2.png" alt="Dispositivos" width="400"> | <img src="../assets/frontend/ss3.png" alt="Detalle Dispositivo" width="400">
-
-| Alertas | Analytics |
-|---------|-----------|
-| <img src="../assets/frontend/ss4.png" alt="Alertas" width="400"> | <img src="../assets/frontend/ss5.png" alt="Analytics" width="400"> |
-
 ## Estructura del Proyecto
 
 ```
