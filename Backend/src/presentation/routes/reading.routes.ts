@@ -1,4 +1,3 @@
-import { IoTClient, ConfirmDestinationCommand } from '@aws-sdk/client-iot';
 import { Router, Request, Response, NextFunction } from 'express';
 import { ReadingController } from '../controllers/reading.controller';
 import { readingUseCases } from '../../container';
@@ -14,17 +13,16 @@ const controller = new ReadingController(readingUseCases);
 
 router.post('/iot-ingest', async (req: Request, res: Response, next: NextFunction) => {
   if (req.body?.ConfirmationToken) {
+    console.log('=== IOT DESTINATION CONFIRMATION TOKEN ===');
+    console.log(req.body.ConfirmationToken);
+    console.log('=== COPY PASTE THIS TOKEN IN AWS CONSOLE ===');
     try {
-      const iot = new IoTClient({ region: env.awsRegion });
-      await iot.send(new ConfirmDestinationCommand({
-        confirmationToken: req.body.ConfirmationToken,
-      }));
-      console.log('IoT Core destination confirmed via ConfirmationToken');
-      return res.status(200).send('OK');
+      await fetch(`https://iot.us-east-1.amazonaws.com/destinations/confirm?confirmationToken=${encodeURIComponent(req.body.ConfirmationToken)}`, { method: 'GET' });
+      console.log('IoT destination confirmation attempted');
     } catch (err) {
-      console.error('Failed to confirm IoT destination:', err);
-      return res.status(500).send('Confirmation failed');
+      console.error('IoT destination confirmation failed:', err);
     }
+    return res.status(200).send('OK');
   }
 
   if (req.body?.SubscribeURL) {
