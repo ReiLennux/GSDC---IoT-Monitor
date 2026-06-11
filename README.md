@@ -8,13 +8,7 @@ Plataforma de monitoreo en tiempo real para dispositivos IoT en centro de datos.
 
 ## Demo en Vivo
 
-| Servicio | URL |
-|----------|-----|
-| **Frontend (HTTPS)** | https://d574amddekt52.cloudfront.net |
-| **Frontend (S3)** | http://iot-monitor-frontend-137583030560.s3-website-us-east-1.amazonaws.com |
-| **Swagger** | http://100.51.1.187:3000/api-docs |
-| **API Gateway REST** | https://k1s7q1ooe1.execute-api.us-east-1.amazonaws.com/v1 |
-| **WebSocket** | wss://36bjkrvspj.execute-api.us-east-1.amazonaws.com/v1 |
+**Plataforma:** https://d574amddekt52.cloudfront.net/  
 
 **Credenciales:** `admin@iot.local` / `Admin123!`
 
@@ -107,6 +101,4 @@ cd Backend && npm run simulator
 ## Documentación
 
 - [Especificación técnica](./PRUEBA_TECNICA.md)
-- [Auditoría de cumplimiento](./AUDITORIA.md)
-- [Plan de commits](./COMMITS.md)
 - [Colección Postman](./IoT%20Monitor%20API.postman_collection.json)
